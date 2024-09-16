@@ -2,12 +2,13 @@ package config
 
 import (
 	"flag"
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 	"log"
 	"net"
 	"os"
 	"strconv"
+
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
