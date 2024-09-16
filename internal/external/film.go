@@ -3,10 +3,11 @@ package external
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"io"
 	"kinopoisk-api/internal/config"
 	"net/http"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Film struct {
