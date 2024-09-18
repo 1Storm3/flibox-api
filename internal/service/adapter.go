@@ -3,5 +3,5 @@ package service
 import "context"
 
 type FilmRepository interface {
-	GetFilms(ctx context.Context, filmId string)
+	GetOne(ctx context.Context, filmId string) (Film, error)
 }

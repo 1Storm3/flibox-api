@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/gofiber/fiber/v2"
 	"kinopoisk-api/internal/closer"
+	"kinopoisk-api/internal/delivery/rest"
 	"kinopoisk-api/internal/logger"
 	"net"
 )
 
 type App struct {
 	diContainer *diContainer
-	*fiber.App
-	route *routeConfig
+	httpServer  *fiber.App
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -30,7 +30,7 @@ func (a *App) Run() error {
 		closer.Wait()
 	}()
 
-	if err := a.runApp(); err != nil {
+	if err := a.runHTTPServer(); err != nil {
 		return err
 	}
 
@@ -41,9 +41,8 @@ func (a *App) initDeps(ctx context.Context) error {
 
 	inits := []func(context.Context) error{
 		a.initDIContainer,
-		a.initApp,
-		a.initRoutes,
 		a.initLogger,
+		a.initHTTPServer,
 	}
 
 	for _, f := range inits {
@@ -54,11 +53,19 @@ func (a *App) initDeps(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initRoutes(_ context.Context) error {
-	a.route = newRouteConfig(a.App, a.diContainer.Config())
+func (a *App) initHTTPServer(_ context.Context) error {
+	a.httpServer = fiber.New()
 
-	a.route.Setup()
-
+	filmService, err := a.diContainer.FilmService()
+	if err != nil {
+		return err
+	}
+	filmHandler := rest.NewFilmHandler(filmService)
+	router := rest.NewRouter(filmHandler)
+	router.LoadRoutes(a.httpServer)
+	closer.Add(func() error {
+		return a.httpServer.Shutdown()
+	})
 	return nil
 }
 
@@ -72,25 +79,14 @@ func (a *App) initLogger(_ context.Context) error {
 	logger.Init(a.diContainer.Config().Env)
 	return nil
 }
-
-func (a *App) initApp(ctx context.Context) error {
-	a.App = fiber.New()
-
-	_, err := a.diContainer.App(ctx)
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (a *App) runApp() error {
+func (a *App) runHTTPServer() error {
 
 	l, err := net.Listen("tcp", a.diContainer.Config().App.HostPort())
 	if err != nil {
 		return err
 	}
 
-	if err := a.App.Listener(l); err != nil {
+	if err := a.httpServer.Listener(l); err != nil {
 		return err
 	}
 

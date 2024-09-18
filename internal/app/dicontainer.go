@@ -1,14 +1,15 @@
 package app
 
 import (
-	"context"
-	"github.com/gofiber/fiber/v2"
 	"kinopoisk-api/internal/config"
+	"kinopoisk-api/internal/repository"
+	"kinopoisk-api/internal/service"
 )
 
 type diContainer struct {
-	config *config.Config
-	app    *fiber.App
+	config         *config.Config
+	filmRepository FilmRepository
+	filmService    FilmService
 }
 
 func newDIContainer() *diContainer {
@@ -22,10 +23,22 @@ func (d *diContainer) Config() *config.Config {
 	return d.config
 }
 
-func (d *diContainer) App(_ context.Context) (*fiber.App, error) {
-	if d.app == nil {
-		d.app = fiber.New()
+func (d *diContainer) FilmService() (FilmService, error) {
+	if d.filmService == nil {
+		repo, err := d.FilmRepository()
+		if err != nil {
+			return nil, err
+		}
+		d.filmService = service.NewFilmService(repo, d.Config())
 	}
 
-	return d.app, nil
+	return d.filmService, nil
+}
+
+func (d *diContainer) FilmRepository() (FilmRepository, error) {
+	if d.filmRepository == nil {
+		d.filmRepository = repository.NewFilmRepository()
+	}
+	return d.filmRepository, nil
+
 }
