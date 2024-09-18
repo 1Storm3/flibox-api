@@ -1,6 +1,7 @@
 package app
 
 import (
+	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/config"
 	"kinopoisk-api/internal/repository"
 	"kinopoisk-api/internal/service"
@@ -8,6 +9,7 @@ import (
 
 type diContainer struct {
 	config         *config.Config
+	storage        *postgres.Storage
 	filmRepository FilmRepository
 	filmService    FilmService
 }
@@ -21,6 +23,17 @@ func (d *diContainer) Config() *config.Config {
 		d.config = config.MustLoad()
 	}
 	return d.config
+}
+
+func (d *diContainer) Storage() (*postgres.Storage, error) {
+	if d.storage == nil {
+		var err error
+		d.storage, err = postgres.NewStorage(d.Config().DB.URL)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return d.storage, nil
 }
 
 func (d *diContainer) FilmService() (FilmService, error) {
@@ -37,7 +50,11 @@ func (d *diContainer) FilmService() (FilmService, error) {
 
 func (d *diContainer) FilmRepository() (FilmRepository, error) {
 	if d.filmRepository == nil {
-		d.filmRepository = repository.NewFilmRepository()
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		d.filmRepository = repository.NewFilmRepository(storage)
 	}
 	return d.filmRepository, nil
 

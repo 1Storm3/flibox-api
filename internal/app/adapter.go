@@ -11,4 +11,5 @@ type FilmService interface {
 
 type FilmRepository interface {
 	GetOne(ctx context.Context, filmId string) (service.Film, error)
+	Save(film service.Film) error
 }

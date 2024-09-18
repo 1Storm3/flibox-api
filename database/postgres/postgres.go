@@ -1,25 +1,33 @@
 package postgres
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Storage struct {
-	db *sql.DB
+	db *gorm.DB
+}
+
+func (s *Storage) DB() *gorm.DB {
+	return s.db
 }
 
 func NewStorage(connectionString string) (*Storage, error) {
 
-	db, err := sql.Open("postgres", connectionString)
+	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open connection to database: %v", err)
 	}
 
-	err = db.Ping()
+	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+	err = sqlDB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
 	fmt.Println("Successfully connected to PostgreSQL database!")
@@ -27,5 +35,9 @@ func NewStorage(connectionString string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 func (s *Storage) Close() error {
-	return s.db.Close()
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
