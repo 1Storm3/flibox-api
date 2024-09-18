@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"kinopoisk-api/internal/closer"
 	"kinopoisk-api/internal/delivery/rest"
 	"kinopoisk-api/internal/logger"
@@ -55,6 +56,12 @@ func (a *App) initDeps(ctx context.Context) error {
 
 func (a *App) initHTTPServer(_ context.Context) error {
 	a.httpServer = fiber.New()
+
+	a.httpServer.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+	}))
 
 	filmService, err := a.diContainer.FilmService()
 	if err != nil {
