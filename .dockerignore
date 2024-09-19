@@ -1,0 +1,13 @@
+.github
+.vscode
+bin
+/bin/
+docker-compose.yaml
+Dockerfile
+Makefile
+.gitignore
+.env
+.env.*
+README.md
+
+*_test.go
