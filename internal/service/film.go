@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"kinopoisk-api/internal/config"
+	"kinopoisk-api/shared/httperror"
 	"net/http"
-	"strconv"
 )
 
 type Film struct {
@@ -37,7 +37,7 @@ func NewFilmService(filmRepo FilmRepository, config *config.Config) *FilmService
 func (f *FilmService) GetOne(filmId string) (Film, error) {
 	result, err := f.filmRepo.GetOne(context.Background(), filmId)
 	if err != nil {
-		return Film{}, err
+		return Film{}, fmt.Errorf("failed to fetch film from repository: %w", err)
 	}
 
 	if result == (Film{}) {
@@ -58,12 +58,13 @@ func (f *FilmService) GetOne(filmId string) (Film, error) {
 			return Film{}, fmt.Errorf("failed to make request to Kinopoisk API: %w", err)
 		}
 		defer resAllFilms.Body.Close()
-		if resAllFilms.StatusCode == 404 {
-			return Film{}, fmt.Errorf(strconv.Itoa(resAllFilms.StatusCode), "film not found")
+
+		if resAllFilms.StatusCode == http.StatusNotFound {
+			return Film{}, httperror.New(http.StatusNotFound, "Фильм не найден")
 		}
 
 		if resAllFilms.StatusCode != http.StatusOK {
-			return Film{}, fmt.Errorf("API request failed with status: %s", resAllFilms.Status)
+			return Film{}, fmt.Errorf("kinopoisk API request failed with status: %d", resAllFilms.StatusCode)
 		}
 
 		bodyAllFilms, err := io.ReadAll(resAllFilms.Body)

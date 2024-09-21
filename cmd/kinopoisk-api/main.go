@@ -4,7 +4,7 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"kinopoisk-api/internal/app"
-	"kinopoisk-api/internal/logger"
+	"kinopoisk-api/shared/logger"
 )
 
 func main() {

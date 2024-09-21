@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"kinopoisk-api/internal/closer"
 	"kinopoisk-api/internal/delivery/rest"
-	"kinopoisk-api/internal/logger"
+	"kinopoisk-api/shared/closer"
+	"kinopoisk-api/shared/logger"
 	"net"
 )
 
@@ -64,11 +64,13 @@ func (a *App) initHTTPServer(_ context.Context) error {
 	}))
 
 	filmService, err := a.diContainer.FilmService()
+	sequelService, err := a.diContainer.SequelService()
 	if err != nil {
 		return err
 	}
 	filmHandler := rest.NewFilmHandler(filmService)
-	router := rest.NewRouter(filmHandler)
+	sequelHandler := rest.NewSequelHandler(sequelService)
+	router := rest.NewRouter(filmHandler, sequelHandler)
 	router.LoadRoutes(a.httpServer)
 	closer.Add(func() error {
 		return a.httpServer.Shutdown()

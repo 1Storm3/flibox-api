@@ -8,10 +8,12 @@ import (
 )
 
 type diContainer struct {
-	config         *config.Config
-	storage        *postgres.Storage
-	filmRepository FilmRepository
-	filmService    FilmService
+	config           *config.Config
+	storage          *postgres.Storage
+	filmRepository   FilmRepository
+	filmService      FilmService
+	sequelService    SequelService
+	sequelRepository SequelRepository
 }
 
 func newDIContainer() *diContainer {
@@ -58,4 +60,26 @@ func (d *diContainer) FilmRepository() (FilmRepository, error) {
 	}
 	return d.filmRepository, nil
 
+}
+
+func (d *diContainer) SequelService() (SequelService, error) {
+	if d.sequelService == nil {
+		repo, err := d.SequelRepository()
+		if err != nil {
+			return nil, err
+		}
+		d.sequelService = service.NewSequelService(repo, d.Config())
+	}
+	return d.sequelService, nil
+}
+
+func (d *diContainer) SequelRepository() (SequelRepository, error) {
+	if d.sequelRepository == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		d.sequelRepository = repository.NewSequelRepository(storage)
+	}
+	return d.sequelRepository, nil
 }

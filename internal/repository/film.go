@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"gorm.io/gorm"
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/service"
@@ -27,7 +26,6 @@ func (f *filmRepository) GetOne(ctx context.Context, filmId string) (service.Fil
 }
 
 func (f *filmRepository) Save(film service.Film) error {
-	fmt.Println(film)
 	result := f.storage.DB().Create(&film)
 
 	if result.Error != nil {

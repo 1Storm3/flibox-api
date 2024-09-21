@@ -11,3 +11,6 @@ clean:
 
 run: build
 	./api -config .env
+
+migrate:
+	goose -dir ./database/migrations postgres "postgresql://admin:admin@185.209.20.129:5432/postgres?sslmode=disable" up

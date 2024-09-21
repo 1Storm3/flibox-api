@@ -6,3 +6,8 @@ type FilmRepository interface {
 	GetOne(ctx context.Context, filmId string) (Film, error)
 	Save(film Film) error
 }
+
+type SequelRepository interface {
+	GetAll(ctx context.Context, filmId string) ([]Sequel, error)
+	Save(sequel []Sequel) error
+}
