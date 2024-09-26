@@ -30,6 +30,8 @@ type SequelService struct {
 	config     *config.Config
 }
 
+const baseUrlForAllSequels = "https://kinopoiskapiunofficial.tech/api/v2.1/films/%s/sequels_and_prequels"
+
 func NewSequelService(sequelRepo SequelRepository, config *config.Config) *SequelService {
 	return &SequelService{
 		sequelRepo: sequelRepo,
@@ -59,7 +61,7 @@ func (s *SequelService) GetAll(filmId string) ([]Sequel, error) {
 
 func (s *SequelService) FetchSequels(filmId string) ([]Sequel, error) {
 	apiKey := s.config.DB.ApiKey
-	baseUrlForAllSequels := "https://kinopoiskapiunofficial.tech/api/v2.1/films/%s/sequels_and_prequels"
+
 	urlAllSequels := fmt.Sprintf(baseUrlForAllSequels, filmId)
 
 	req, err := http.NewRequest("GET", urlAllSequels, nil)

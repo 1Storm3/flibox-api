@@ -11,3 +11,7 @@ type SequelRepository interface {
 	GetAll(ctx context.Context, filmId string) ([]Sequel, error)
 	Save(sequel []Sequel) error
 }
+
+type UserRepository interface {
+	GetOne(ctx context.Context, userToken string) (User, error)
+}

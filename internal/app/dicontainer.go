@@ -14,6 +14,8 @@ type diContainer struct {
 	filmService      FilmService
 	sequelService    SequelService
 	sequelRepository SequelRepository
+	userRepository   UserRepository
+	userService      UserService
 }
 
 func newDIContainer() *diContainer {
@@ -71,6 +73,28 @@ func (d *diContainer) SequelService() (SequelService, error) {
 		d.sequelService = service.NewSequelService(repo, d.Config())
 	}
 	return d.sequelService, nil
+}
+
+func (d *diContainer) UserService() (UserService, error) {
+	if d.userService == nil {
+		repo, err := d.UserRepository()
+		if err != nil {
+			return nil, err
+		}
+		d.userService = service.NewUserService(repo)
+	}
+	return d.userService, nil
+}
+
+func (d *diContainer) UserRepository() (UserRepository, error) {
+	if d.userRepository == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		d.userRepository = repository.NewUserRepository(storage)
+	}
+	return d.userRepository, nil
 }
 
 func (d *diContainer) SequelRepository() (SequelRepository, error) {
