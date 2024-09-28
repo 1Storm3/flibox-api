@@ -94,6 +94,7 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]Sequel, error) {
 		}
 		sequels = append(sequels, sequel)
 	}
+
 	err = s.sequelRepo.Save(filmId, sequels)
 
 	if err != nil {
