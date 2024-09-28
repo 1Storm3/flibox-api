@@ -27,6 +27,11 @@ func (s *sequelRepository) GetAll(ctx context.Context, filmId string) ([]service
 }
 
 func (s *sequelRepository) Save(filmId string, sequel []service.Sequel) error {
+	isExist := s.storage.DB().WithContext(context.Background()).Where("sequel_id = ?", filmId).Find(&sequel)
+
+	if isExist != nil {
+		return nil
+	}
 	tx := s.storage.DB().Begin()
 
 	result := tx.Create(&sequel)
