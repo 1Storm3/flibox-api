@@ -8,14 +8,16 @@ import (
 )
 
 type diContainer struct {
-	config           *config.Config
-	storage          *postgres.Storage
-	filmRepository   FilmRepository
-	filmService      FilmService
-	sequelService    SequelService
-	sequelRepository SequelRepository
-	userRepository   UserRepository
-	userService      UserService
+	config               *config.Config
+	storage              *postgres.Storage
+	filmRepository       FilmRepository
+	filmService          FilmService
+	sequelService        SequelService
+	sequelRepository     SequelRepository
+	userRepository       UserRepository
+	userService          UserService
+	filmSequelRepository FilmSequelRepository
+	filmSequelService    FilmSequelService
 }
 
 func newDIContainer() *diContainer {
@@ -62,6 +64,35 @@ func (d *diContainer) FilmRepository() (FilmRepository, error) {
 	}
 	return d.filmRepository, nil
 
+}
+
+func (d *diContainer) FilmSequelRepository() (FilmSequelRepository, error) {
+	if d.filmSequelRepository == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		d.filmSequelRepository = repository.NewFilmSequelRepository(storage)
+	}
+	return d.filmSequelRepository, nil
+}
+
+func (d *diContainer) FilmSequelService() (FilmSequelService, error) {
+	if d.filmSequelService == nil {
+		repo, err := d.FilmSequelRepository()
+		if err != nil {
+			return nil, err
+		}
+		var sequelRepo SequelRepository
+		if d.sequelService == nil {
+			sequelRepo, err = d.SequelRepository()
+			if err != nil {
+				return nil, err
+			}
+		}
+		d.filmSequelService = service.NewFilmsSequelService(repo, sequelRepo, d.Config())
+	}
+	return d.filmSequelService, nil
 }
 
 func (d *diContainer) SequelService() (SequelService, error) {

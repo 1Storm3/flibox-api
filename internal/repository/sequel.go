@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/service"
+	"strconv"
 )
 
 type sequelRepository struct {
@@ -25,7 +26,7 @@ func (s *sequelRepository) GetAll(ctx context.Context, filmId string) ([]service
 	return sequels, nil
 }
 
-func (s *sequelRepository) Save(sequel []service.Sequel) error {
+func (s *sequelRepository) Save(filmId string, sequel []service.Sequel) error {
 	tx := s.storage.DB().Begin()
 
 	result := tx.Create(&sequel)
@@ -35,11 +36,18 @@ func (s *sequelRepository) Save(sequel []service.Sequel) error {
 		return result.Error
 	}
 
+	filmIdInt, err := strconv.Atoi(filmId)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	var filmsSequels []service.FilmsSequel
 	for _, v := range sequel {
 		filmsSequels = append(filmsSequels, service.FilmsSequel{
 			SequelId: v.SequelId,
-			FilmId:   v.FilmId,
+			FilmId:   filmIdInt,
 		})
 	}
 

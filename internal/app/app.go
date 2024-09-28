@@ -64,13 +64,13 @@ func (a *App) initHTTPServer(_ context.Context) error {
 	}))
 
 	filmService, err := a.diContainer.FilmService()
-	sequelService, err := a.diContainer.SequelService()
 	userService, err := a.diContainer.UserService()
+	filmSequelService, err := a.diContainer.FilmSequelService()
 	if err != nil {
 		return err
 	}
 	filmHandler := rest.NewFilmHandler(filmService)
-	sequelHandler := rest.NewSequelHandler(sequelService)
+	sequelHandler := rest.NewSequelHandler(filmSequelService)
 	userHandler := rest.NewUserHandler(userService)
 
 	router := rest.NewRouter(filmHandler, sequelHandler, userHandler)

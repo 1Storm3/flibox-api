@@ -20,7 +20,16 @@ type SequelService interface {
 
 type SequelRepository interface {
 	GetAll(ctx context.Context, filmId string) ([]service.Sequel, error)
+	Save(filmId string, sequel []service.Sequel) error
+}
+
+type FilmSequelRepository interface {
+	GetAll(ctx context.Context, filmId string) ([]service.Sequel, error)
 	Save(sequel []service.Sequel) error
+}
+
+type FilmSequelService interface {
+	GetAll(filmId string) ([]service.Sequel, error)
 }
 
 type UserService interface {

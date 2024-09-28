@@ -7,26 +7,26 @@ import (
 )
 
 type SequelHandler struct {
-	sequelService SequelService
+	filmSequelService FilmSequelService
 }
 
 func NewSequelHandler(
-	sequelService SequelService,
+	filmSequelService FilmSequelService,
 ) *SequelHandler {
 	return &SequelHandler{
-		sequelService: sequelService,
+		filmSequelService: filmSequelService,
 	}
 }
 
 func (h *SequelHandler) GetAll(ctx *fiber.Ctx) error {
 	filmId := ctx.Params("id")
-	sequels, err := h.sequelService.GetAll(filmId)
+	sequels, err := h.filmSequelService.GetAll(filmId)
 	if err != nil {
 		logger.Error(err.Error())
-		ctx.Status(http.StatusInternalServerError)
+		ctx.Status(http.StatusConflict)
 		resp := fiber.Map{
 			"error":      err.Error(),
-			"statusCode": http.StatusInternalServerError,
+			"statusCode": http.StatusConflict,
 		}
 		return ctx.JSON(resp)
 	}

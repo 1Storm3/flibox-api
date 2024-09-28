@@ -5,7 +5,6 @@ SELECT 'up SQL query';
 CREATE TABLE IF NOT EXISTS sequels
 (
     sequel_id INT4 PRIMARY KEY,
-    film_id INT4,
     name_ru TEXT,
     name_original TEXT,
     poster_url TEXT,

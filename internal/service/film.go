@@ -11,7 +11,7 @@ import (
 )
 
 type Film struct {
-	ExternalID      *int     `json:"kinopoiskId" gorm:"column:external_id"`
+	FilmID          *int     `json:"kinopoiskId" gorm:"column:film_id"`
 	NameRU          *string  `json:"nameRu" gorm:"column:name_ru"`
 	NameOriginal    *string  `json:"nameOriginal" gorm:"column:name_original"`
 	Year            *int     `json:"year" gorm:"column:year"`

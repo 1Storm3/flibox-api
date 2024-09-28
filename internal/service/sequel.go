@@ -7,12 +7,10 @@ import (
 	"io"
 	"kinopoisk-api/internal/config"
 	"net/http"
-	"strconv"
 )
 
 type Sequel struct {
 	SequelId     int     `json:"sequelId" gorm:"column:sequel_id"`
-	FilmId       int     `json:"filmId" gorm:"column:film_id"`
 	NameRU       *string `json:"nameRu" gorm:"column:name_ru"`
 	NameOriginal *string `json:"name" gorm:"column:name_original"`
 	PosterURL    *string `json:"posterUrl" gorm:"column:poster_url"`
@@ -29,8 +27,6 @@ type SequelService struct {
 	sequelRepo SequelRepository
 	config     *config.Config
 }
-
-const baseUrlForAllSequels = "https://kinopoiskapiunofficial.tech/api/v2.1/films/%s/sequels_and_prequels"
 
 func NewSequelService(sequelRepo SequelRepository, config *config.Config) *SequelService {
 	return &SequelService{
@@ -95,16 +91,10 @@ func (s *SequelService) FetchSequels(filmId string) ([]Sequel, error) {
 	if err != nil {
 		return []Sequel{}, fmt.Errorf("failed to decode response from Kinopoisk API: %w", err)
 	}
-
-	filmIdInt, err := strconv.Atoi(filmId)
-	if err != nil {
-		return []Sequel{}, fmt.Errorf("failed to convert filmId to int: %w", err)
-	}
 	var sequels []Sequel
 	for _, externalSequel := range externalSequels {
 		sequel := Sequel{
 			SequelId:     externalSequel.FilmId,
-			FilmId:       filmIdInt,
 			NameRU:       externalSequel.NameRu,
 			NameOriginal: externalSequel.NameOriginal,
 			PosterURL:    externalSequel.PosterUrl,
@@ -112,7 +102,7 @@ func (s *SequelService) FetchSequels(filmId string) ([]Sequel, error) {
 		sequels = append(sequels, sequel)
 	}
 
-	err = s.sequelRepo.Save(sequels)
+	err = s.sequelRepo.Save(filmId, sequels)
 
 	if err != nil {
 		return []Sequel{}, fmt.Errorf("failed to save sequel to repository: %w", err)

@@ -23,6 +23,7 @@ func NewFilmHandler(
 func (h *FilmHandler) GetOneByID(ctx *fiber.Ctx) error {
 	filmId := ctx.Params("id")
 	film, err := h.filmService.GetOne(filmId)
+
 	if err != nil {
 		logger.Error(err.Error())
 

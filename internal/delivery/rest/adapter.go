@@ -15,3 +15,7 @@ type SequelService interface {
 type UserService interface {
 	GetOne(userToken string) (service.User, error)
 }
+
+type FilmSequelService interface {
+	GetAll(filmId string) ([]service.Sequel, error)
+}
