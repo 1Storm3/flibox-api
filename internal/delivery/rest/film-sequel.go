@@ -6,19 +6,19 @@ import (
 	"net/http"
 )
 
-type SequelHandler struct {
+type FilmSequelHandler struct {
 	filmSequelService FilmSequelService
 }
 
-func NewSequelHandler(
+func NewFilmSequelHandler(
 	filmSequelService FilmSequelService,
-) *SequelHandler {
-	return &SequelHandler{
+) *FilmSequelHandler {
+	return &FilmSequelHandler{
 		filmSequelService: filmSequelService,
 	}
 }
 
-func (h *SequelHandler) GetAll(ctx *fiber.Ctx) error {
+func (h *FilmSequelHandler) GetAll(ctx *fiber.Ctx) error {
 	filmId := ctx.Params("id")
 	sequels, err := h.filmSequelService.GetAll(filmId)
 	if err != nil {

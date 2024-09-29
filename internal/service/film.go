@@ -11,7 +11,7 @@ import (
 )
 
 type Film struct {
-	FilmID          *int     `json:"kinopoiskId" gorm:"column:film_id"`
+	ID              *int     `json:"kinopoiskId" gorm:"column:id"`
 	NameRU          *string  `json:"nameRu" gorm:"column:name_ru"`
 	NameOriginal    *string  `json:"nameOriginal" gorm:"column:name_original"`
 	Year            *int     `json:"year" gorm:"column:year"`
@@ -20,6 +20,7 @@ type Film struct {
 	Description     *string  `json:"description" gorm:"column:description"`
 	LogoURL         *string  `json:"logoUrl" gorm:"column:logo_url"`
 	Type            *string  `json:"type" gorm:"column:type"`
+	Sequels         []*Film  `gorm:"many2many:film_sequels;joinForeignKey:film_id;JoinReferences:sequel_id"`
 }
 
 type FilmService struct {
@@ -40,7 +41,7 @@ func (f *FilmService) GetOne(filmId string) (Film, error) {
 		return Film{}, fmt.Errorf("failed to fetch film from repository: %w", err)
 	}
 
-	if result == (Film{}) {
+	if result.ID == nil {
 		apiKey := f.config.DB.ApiKey
 		baseUrlForAllFilms := "https://kinopoiskapiunofficial.tech/api/v2.2/films/"
 		urlAllFilms := fmt.Sprintf("%s%s", baseUrlForAllFilms, filmId)

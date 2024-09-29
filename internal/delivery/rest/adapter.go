@@ -8,14 +8,10 @@ type FilmService interface {
 	GetOne(filmId string) (service.Film, error) // domain model, httperror
 }
 
-type SequelService interface {
-	GetAll(filmId string) ([]service.Sequel, error)
-}
-
 type UserService interface {
 	GetOne(userToken string) (service.User, error)
 }
 
 type FilmSequelService interface {
-	GetAll(filmId string) ([]service.Sequel, error)
+	GetAll(filmId string) ([]service.Film, error)
 }

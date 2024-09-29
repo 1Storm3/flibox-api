@@ -14,22 +14,13 @@ type FilmRepository interface {
 	Save(film service.Film) error
 }
 
-type SequelService interface {
-	GetAll(filmId string) ([]service.Sequel, error)
-}
-
-type SequelRepository interface {
-	GetAll(ctx context.Context, filmId string) ([]service.Sequel, error)
-	Save(filmId string, sequel []service.Sequel) error
-}
-
 type FilmSequelRepository interface {
-	GetAll(ctx context.Context, filmId string) ([]service.Sequel, error)
-	Save(sequel []service.Sequel) error
+	GetAll(ctx context.Context, filmId string) ([]service.FilmSequel, error)
+	Save(filmId int, sequelId int) error
 }
 
 type FilmSequelService interface {
-	GetAll(filmId string) ([]service.Sequel, error)
+	GetAll(filmId string) ([]service.Film, error)
 }
 
 type UserService interface {

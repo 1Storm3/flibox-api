@@ -8,6 +8,7 @@ type User struct {
 	Avatar    string `json:"avatar" gorm:"column:avatar"`
 	TgId      string `json:"tgId" gorm:"column:tg_id"`
 	UserToken string `json:"userToken" gorm:"column:user_token"`
+	CreatedAt string `json:"createdAt" gorm:"column:created_at"`
 }
 
 type UserService struct {

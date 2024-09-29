@@ -15,7 +15,7 @@ type filmRepository struct {
 func (f *filmRepository) GetOne(ctx context.Context, filmId string) (service.Film, error) {
 	var film service.Film
 
-	result := f.storage.DB().WithContext(ctx).Where("film_id = ?", filmId).First(&film)
+	result := f.storage.DB().WithContext(ctx).Where("id = ?", filmId).First(&film)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return service.Film{}, nil
 	} else if result.Error != nil {

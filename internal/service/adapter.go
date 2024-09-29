@@ -7,16 +7,15 @@ type FilmRepository interface {
 	Save(film Film) error
 }
 
-type SequelRepository interface {
-	GetAll(ctx context.Context, filmId string) ([]Sequel, error)
-	Save(filmId string, sequel []Sequel) error
-}
-
 type UserRepository interface {
 	GetOne(ctx context.Context, userToken string) (User, error)
 }
 
 type FilmSequelRepository interface {
-	GetAll(ctx context.Context, filmId string) ([]Sequel, error)
-	Save(sequel []Sequel) error
+	GetAll(ctx context.Context, filmId string) ([]FilmSequel, error)
+	Save(filmId int, sequelId int) error
+}
+
+type FilmServiceI interface {
+	GetOne(filmId string) (Film, error)
 }

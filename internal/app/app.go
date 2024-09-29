@@ -70,10 +70,10 @@ func (a *App) initHTTPServer(_ context.Context) error {
 		return err
 	}
 	filmHandler := rest.NewFilmHandler(filmService)
-	sequelHandler := rest.NewSequelHandler(filmSequelService)
+	filmSequelHandler := rest.NewFilmSequelHandler(filmSequelService)
 	userHandler := rest.NewUserHandler(userService)
 
-	router := rest.NewRouter(filmHandler, sequelHandler, userHandler)
+	router := rest.NewRouter(filmHandler, filmSequelHandler, userHandler)
 	router.LoadRoutes(a.httpServer)
 	closer.Add(func() error {
 		return a.httpServer.Shutdown()

@@ -12,8 +12,6 @@ type diContainer struct {
 	storage              *postgres.Storage
 	filmRepository       FilmRepository
 	filmService          FilmService
-	sequelService        SequelService
-	sequelRepository     SequelRepository
 	userRepository       UserRepository
 	userService          UserService
 	filmSequelRepository FilmSequelRepository
@@ -83,27 +81,13 @@ func (d *diContainer) FilmSequelService() (FilmSequelService, error) {
 		if err != nil {
 			return nil, err
 		}
-		var sequelRepo SequelRepository
-		if d.sequelService == nil {
-			sequelRepo, err = d.SequelRepository()
-			if err != nil {
-				return nil, err
-			}
+		filmService, err := d.FilmService()
+		if err != nil {
+
 		}
-		d.filmSequelService = service.NewFilmsSequelService(repo, sequelRepo, d.Config())
+		d.filmSequelService = service.NewFilmsSequelService(repo, d.Config(), filmService)
 	}
 	return d.filmSequelService, nil
-}
-
-func (d *diContainer) SequelService() (SequelService, error) {
-	if d.sequelService == nil {
-		repo, err := d.SequelRepository()
-		if err != nil {
-			return nil, err
-		}
-		d.sequelService = service.NewSequelService(repo, d.Config())
-	}
-	return d.sequelService, nil
 }
 
 func (d *diContainer) UserService() (UserService, error) {
@@ -126,15 +110,4 @@ func (d *diContainer) UserRepository() (UserRepository, error) {
 		d.userRepository = repository.NewUserRepository(storage)
 	}
 	return d.userRepository, nil
-}
-
-func (d *diContainer) SequelRepository() (SequelRepository, error) {
-	if d.sequelRepository == nil {
-		storage, err := d.Storage()
-		if err != nil {
-			return nil, err
-		}
-		d.sequelRepository = repository.NewSequelRepository(storage)
-	}
-	return d.sequelRepository, nil
 }
