@@ -38,8 +38,9 @@ func (h *FilmHandler) GetOneByID(ctx *fiber.Ctx) error {
 		}
 
 		ctx.Status(http.StatusInternalServerError)
+
 		resp := fiber.Map{
-			"error": httpErr.Error(),
+			"error": "Internal Server Error",
 			"code":  http.StatusInternalServerError,
 		}
 		return ctx.JSON(resp)
