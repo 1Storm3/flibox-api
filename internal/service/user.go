@@ -3,7 +3,7 @@ package service
 import "context"
 
 type User struct {
-	Uuid      string `json:"uuid" gorm:"column:uuid"`
+	Id        string `json:"id" gorm:"column:id"`
 	FirstName string `json:"firstName" gorm:"column:first_name"`
 	Avatar    string `json:"avatar" gorm:"column:avatar"`
 	TgId      string `json:"tgId" gorm:"column:tg_id"`
