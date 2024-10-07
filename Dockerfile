@@ -6,6 +6,8 @@ COPY go.mod go.sum internal ./
 
 RUN go mod download
 
+COPY . .
+
 RUN go build -o main ./cmd/kinopoisk-api/main.go
 
 FROM alpine:latest

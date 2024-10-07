@@ -16,6 +16,11 @@ type FilmSequelRepository interface {
 	Save(filmId int, sequelId int) error
 }
 
+type FilmSimilarRepository interface {
+	GetAll(ctx context.Context, filmId string) ([]FilmSimilar, error)
+	Save(filmId int, similarId int) error
+}
+
 type FilmServiceI interface {
 	GetOne(filmId string) (Film, error)
 }

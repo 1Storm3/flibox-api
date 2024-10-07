@@ -66,14 +66,16 @@ func (a *App) initHTTPServer(_ context.Context) error {
 	filmService, err := a.diContainer.FilmService()
 	userService, err := a.diContainer.UserService()
 	filmSequelService, err := a.diContainer.FilmSequelService()
+	filmSimilarService, err := a.diContainer.FilmSimilarService()
 	if err != nil {
 		return err
 	}
 	filmHandler := rest.NewFilmHandler(filmService)
 	filmSequelHandler := rest.NewFilmSequelHandler(filmSequelService)
 	userHandler := rest.NewUserHandler(userService)
+	filmSimilarHandler := rest.NewFilmSimilarHandler(filmSimilarService)
 
-	router := rest.NewRouter(filmHandler, filmSequelHandler, userHandler)
+	router := rest.NewRouter(filmHandler, filmSequelHandler, userHandler, filmSimilarHandler)
 	router.LoadRoutes(a.httpServer)
 	closer.Add(func() error {
 		return a.httpServer.Shutdown()

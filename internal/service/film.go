@@ -10,6 +10,8 @@ import (
 	"net/http"
 )
 
+const baseUrlForAllFilms = "https://kinopoiskapiunofficial.tech/api/v2.2/films/"
+
 type Film struct {
 	ID              *int     `json:"kinopoiskId" gorm:"column:id"`
 	NameRU          *string  `json:"nameRu" gorm:"column:name_ru"`
@@ -43,7 +45,6 @@ func (f *FilmService) GetOne(filmId string) (Film, error) {
 
 	if result.ID == nil {
 		apiKey := f.config.DB.ApiKey
-		baseUrlForAllFilms := "https://kinopoiskapiunofficial.tech/api/v2.2/films/"
 		urlAllFilms := fmt.Sprintf("%s%s", baseUrlForAllFilms, filmId)
 
 		req, err := http.NewRequest("GET", urlAllFilms, nil)

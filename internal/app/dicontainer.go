@@ -8,14 +8,16 @@ import (
 )
 
 type diContainer struct {
-	config               *config.Config
-	storage              *postgres.Storage
-	filmRepository       FilmRepository
-	filmService          FilmService
-	userRepository       UserRepository
-	userService          UserService
-	filmSequelRepository FilmSequelRepository
-	filmSequelService    FilmSequelService
+	config                *config.Config
+	storage               *postgres.Storage
+	filmRepository        FilmRepository
+	filmService           FilmService
+	userRepository        UserRepository
+	userService           UserService
+	filmSequelRepository  FilmSequelRepository
+	filmSequelService     FilmSequelService
+	filmSimilarRepository FilmSimilarRepository
+	filmSimilarService    FilmSimilarService
 }
 
 func newDIContainer() *diContainer {
@@ -75,6 +77,17 @@ func (d *diContainer) FilmSequelRepository() (FilmSequelRepository, error) {
 	return d.filmSequelRepository, nil
 }
 
+func (d *diContainer) FilmSimilarRepository() (FilmSimilarRepository, error) {
+	if d.filmSimilarRepository == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		d.filmSimilarRepository = repository.NewFilmSimilarRepository(storage)
+	}
+	return d.filmSimilarRepository, nil
+}
+
 func (d *diContainer) FilmSequelService() (FilmSequelService, error) {
 	if d.filmSequelService == nil {
 		repo, err := d.FilmSequelRepository()
@@ -88,6 +101,21 @@ func (d *diContainer) FilmSequelService() (FilmSequelService, error) {
 		d.filmSequelService = service.NewFilmsSequelService(repo, d.Config(), filmService)
 	}
 	return d.filmSequelService, nil
+}
+
+func (d *diContainer) FilmSimilarService() (FilmSimilarService, error) {
+	if d.filmSimilarService == nil {
+		repo, err := d.FilmSimilarRepository()
+		if err != nil {
+			return nil, err
+		}
+		filmService, err := d.FilmService()
+		if err != nil {
+
+		}
+		d.filmSimilarService = service.NewFilmsSimilarService(repo, d.Config(), filmService)
+	}
+	return d.filmSimilarService, nil
 }
 
 func (d *diContainer) UserService() (UserService, error) {
