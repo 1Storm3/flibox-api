@@ -4,10 +4,15 @@ import (
 	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"kinopoisk-api/internal/delivery/rest"
+	"kinopoisk-api/internal/metrics"
+	"kinopoisk-api/internal/metrics/interceptor"
 	"kinopoisk-api/shared/closer"
 	"kinopoisk-api/shared/logger"
+	"log"
 	"net"
+	"net/http"
 )
 
 type App struct {
@@ -54,7 +59,13 @@ func (a *App) initDeps(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initHTTPServer(_ context.Context) error {
+func (a *App) initHTTPServer(ctx context.Context) error {
+
+	err := metrics.Init(ctx)
+	if err != nil {
+		log.Fatalf("failed to initialize metrics: %v", err)
+	}
+
 	a.httpServer = fiber.New()
 
 	a.httpServer.Use(cors.New(cors.Config{
@@ -62,6 +73,8 @@ func (a *App) initHTTPServer(_ context.Context) error {
 		AllowHeaders: "Origin, Content-Type, Accept",
 		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 	}))
+
+	a.httpServer.Use(interceptor.MetricsInterceptor())
 
 	filmService, err := a.diContainer.FilmService()
 	userService, err := a.diContainer.UserService()
@@ -77,6 +90,14 @@ func (a *App) initHTTPServer(_ context.Context) error {
 
 	router := rest.NewRouter(filmHandler, filmSequelHandler, userHandler, filmSimilarHandler)
 	router.LoadRoutes(a.httpServer)
+
+	go func() {
+		err = a.runPrometheus()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	closer.Add(func() error {
 		return a.httpServer.Shutdown()
 	})
@@ -86,6 +107,24 @@ func (a *App) initHTTPServer(_ context.Context) error {
 func (a *App) initDIContainer(_ context.Context) error {
 	a.diContainer = newDIContainer()
 
+	return nil
+}
+
+func (a *App) runPrometheus() error {
+	mux := http.NewServeMux()
+
+	mux.Handle("/metrics", promhttp.Handler())
+
+	prometheusServer := &http.Server{
+		Addr:    ":2020",
+		Handler: mux,
+	}
+	log.Printf("Starting prometheus server on %s", prometheusServer.Addr)
+
+	err := prometheusServer.ListenAndServe()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
