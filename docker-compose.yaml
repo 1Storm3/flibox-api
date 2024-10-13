@@ -1,17 +1,8 @@
-version: '3.9'
-
 services:
-#  postgres:
-#    image: postgres:16.3
-#    container_name: kinopoisk-api
-#    restart: unless-stopped
-#    environment:
-#      POSTGRES_HOST: ${POSTGRES_HOST}
-#      POSTGRES_USER: ${POSTGRES_USER}
-#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-#      POSTGRES_DB: ${POSTGRES_DB}
-#    ports:
-#      - '${POSTGRES_PORT}:5432'
+  kinopoisk-api:
+      image: kinopoisk-api
+      ports:
+        - "8080:8080"
   prometheus:
     image: prom/prometheus:v2.37.9
     ports:
@@ -20,9 +11,13 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./alerts.yml:/etc/prometheus/alerts.yml
       - prometheus-data:/prometheus
-  grafana:
-    image: grafana/grafana-oss:10.0.3
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
+    env_file:
+      - .env
+volumes:
+  prometheus-data:
+#  grafana:
+#    image: grafana/grafana-oss:10.0.3
+#    ports:
+#      - "3000:3000"
+#    volumes:
+#      - grafana-data:/var/lib/grafana

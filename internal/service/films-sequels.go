@@ -31,7 +31,11 @@ type FilmSequelService struct {
 
 const baseUrlForAllSequels = "https://kinopoiskapiunofficial.tech/api/v2.1/films/%s/sequels_and_prequels"
 
-func NewFilmsSequelService(filmSequelRepo FilmSequelRepository, config *config.Config, filmService FilmServiceI) *FilmSequelService {
+func NewFilmsSequelService(
+	filmSequelRepo FilmSequelRepository,
+	config *config.Config,
+	filmService FilmServiceI,
+) *FilmSequelService {
 	return &FilmSequelService{
 		filmSequelRepo: filmSequelRepo,
 		filmService:    filmService,

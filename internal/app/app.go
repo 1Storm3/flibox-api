@@ -78,14 +78,20 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 
 	filmService, err := a.diContainer.FilmService()
 	userService, err := a.diContainer.UserService()
+
 	filmSequelService, err := a.diContainer.FilmSequelService()
 	filmSimilarService, err := a.diContainer.FilmSimilarService()
+
 	if err != nil {
 		return err
 	}
+
 	filmHandler := rest.NewFilmHandler(filmService)
+
 	filmSequelHandler := rest.NewFilmSequelHandler(filmSequelService)
+
 	userHandler := rest.NewUserHandler(userService)
+
 	filmSimilarHandler := rest.NewFilmSimilarHandler(filmSimilarService)
 
 	router := rest.NewRouter(filmHandler, filmSequelHandler, userHandler, filmSimilarHandler)
@@ -110,24 +116,6 @@ func (a *App) initDIContainer(_ context.Context) error {
 	return nil
 }
 
-func (a *App) runPrometheus() error {
-	mux := http.NewServeMux()
-
-	mux.Handle("/metrics", promhttp.Handler())
-
-	prometheusServer := &http.Server{
-		Addr:    ":2020",
-		Handler: mux,
-	}
-	log.Printf("Starting prometheus server on %s", prometheusServer.Addr)
-
-	err := prometheusServer.ListenAndServe()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (a *App) initLogger(_ context.Context) error {
 	logger.Init(a.diContainer.Config().Env)
 	return nil
@@ -143,5 +131,23 @@ func (a *App) runHTTPServer() error {
 		return err
 	}
 
+	return nil
+}
+
+func (a *App) runPrometheus() error {
+	mux := http.NewServeMux()
+
+	mux.Handle("/metrics", promhttp.Handler())
+
+	prometheusServer := &http.Server{
+		Addr:    "localhost:2020",
+		Handler: mux,
+	}
+	log.Printf("Starting prometheus server on %s", prometheusServer.Addr)
+
+	err := prometheusServer.ListenAndServe()
+	if err != nil {
+		return err
+	}
 	return nil
 }

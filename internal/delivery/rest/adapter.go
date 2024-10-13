@@ -5,7 +5,7 @@ import (
 )
 
 type FilmService interface {
-	GetOne(filmId string) (service.Film, error) // domain model, httperror
+	GetOne(filmId string) (service.Film, error)
 }
 
 type UserService interface {

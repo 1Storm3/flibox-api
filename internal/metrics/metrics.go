@@ -9,6 +9,7 @@ import (
 const (
 	appName   = "kinopoisk_api"
 	namespace = "kinopoisk_api__"
+	help      = "Total number of requests"
 )
 
 type Metrics struct {
@@ -24,7 +25,7 @@ func Init(_ context.Context) error {
 				Namespace: namespace,
 				Name:      appName,
 				Subsystem: "http",
-				Help:      "The total number of requests",
+				Help:      help,
 			}),
 	}
 	return nil

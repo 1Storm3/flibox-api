@@ -9,8 +9,17 @@ type Router struct {
 	userHandler        *UserHandler
 }
 
-func NewRouter(filmHandler *FilmHandler, filmSequelHandler *FilmSequelHandler, userHandler *UserHandler, filmSimilarHandler *FilmSimilarHandler) *Router {
-	return &Router{filmHandler: filmHandler, filmSequelHandler: filmSequelHandler, userHandler: userHandler, filmSimilarHandler: filmSimilarHandler}
+func NewRouter(filmHandler *FilmHandler,
+	filmSequelHandler *FilmSequelHandler,
+	userHandler *UserHandler,
+	filmSimilarHandler *FilmSimilarHandler,
+) *Router {
+	return &Router{
+		filmHandler:        filmHandler,
+		filmSequelHandler:  filmSequelHandler,
+		userHandler:        userHandler,
+		filmSimilarHandler: filmSimilarHandler,
+	}
 }
 
 func (r *Router) LoadRoutes(app fiber.Router) {
@@ -25,8 +34,4 @@ func (r *Router) LoadRoutes(app fiber.Router) {
 
 	userRoute := app.Group("api/users")
 	userRoute.Get(":user_token", r.userHandler.GetOne)
-
-	// actors
-	// serials
-	// etc
 }

@@ -31,7 +31,11 @@ type FilmSimilarService struct {
 
 const baseUrlForAllSimilar = "https://kinopoiskapiunofficial.tech/api/v2.2/films/%s/similars"
 
-func NewFilmsSimilarService(filmSimilarRepo FilmSimilarRepository, config *config.Config, filmService FilmServiceI) *FilmSimilarService {
+func NewFilmsSimilarService(
+	filmSimilarRepo FilmSimilarRepository,
+	config *config.Config,
+	filmService FilmServiceI,
+) *FilmSimilarService {
 	return &FilmSimilarService{
 		filmSimilarRepo: filmSimilarRepo,
 		filmService:     filmService,
@@ -83,7 +87,12 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]Film, error) {
 		return []Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
 	}
 
-	defer resAllSimilars.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			return
+		}
+	}(resAllSimilars.Body)
 
 	if resAllSimilars.StatusCode != 200 {
 		return []Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
