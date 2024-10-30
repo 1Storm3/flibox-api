@@ -3,21 +3,19 @@ package app
 import (
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/config"
-	"kinopoisk-api/internal/repository"
-	"kinopoisk-api/internal/service"
+	externalservice "kinopoisk-api/pkg/external-service"
 )
 
 type diContainer struct {
-	config                *config.Config
-	storage               *postgres.Storage
-	filmRepository        FilmRepository
-	filmService           FilmService
-	userRepository        UserRepository
-	userService           UserService
-	filmSequelRepository  FilmSequelRepository
-	filmSequelService     FilmSequelService
-	filmSimilarRepository FilmSimilarRepository
-	filmSimilarService    FilmSimilarService
+	config          *config.Config
+	storage         *postgres.Storage
+	externalService ExternalService
+
+	filmModule        *filmModule
+	userModule        *userModule
+	filmSequelModule  *filmSequelModule
+	filmSimilarModule *filmSimilarModule
+	userFilmModule    *userFilmModule
 }
 
 func newDIContainer() *diContainer {
@@ -31,6 +29,77 @@ func (d *diContainer) Config() *config.Config {
 	return d.config
 }
 
+func (d *diContainer) UserFilmModule() (*userFilmModule, error) {
+	if d.userFilmModule == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		filmModule, err := d.FilmModule()
+		if err != nil {
+			return nil, err
+		}
+		d.userFilmModule = NewUserFilmModule(storage, filmModule)
+	}
+	return d.userFilmModule, nil
+}
+
+func (d *diContainer) FilmSimilarModule() (*filmSimilarModule, error) {
+	if d.filmSimilarModule == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		filmModule, err := d.FilmModule()
+		if err != nil {
+			return nil, err
+		}
+		d.filmSimilarModule = NewFilmSimilarModule(storage, d.Config(), filmModule)
+	}
+	return d.filmSimilarModule, nil
+}
+
+func (d *diContainer) FilmModule() (*filmModule, error) {
+	if d.filmModule == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		externalService, err := d.ExternalService()
+		if err != nil {
+			return nil, err
+		}
+		d.filmModule = NewFilmModule(storage, externalService)
+	}
+	return d.filmModule, nil
+}
+
+func (d *diContainer) UserModule() (*userModule, error) {
+	if d.userModule == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		d.userModule = NewUserModule(storage)
+	}
+	return d.userModule, nil
+}
+
+func (d *diContainer) FilmSequelModule() (*filmSequelModule, error) {
+	if d.filmSequelModule == nil {
+		storage, err := d.Storage()
+		if err != nil {
+			return nil, err
+		}
+		filmModule, err := d.FilmModule()
+		if err != nil {
+			return nil, err
+		}
+		d.filmSequelModule = NewFilmSequelModule(storage, d.Config(), filmModule)
+	}
+	return d.filmSequelModule, nil
+}
+
 func (d *diContainer) Storage() (*postgres.Storage, error) {
 	if d.storage == nil {
 		var err error
@@ -42,100 +111,9 @@ func (d *diContainer) Storage() (*postgres.Storage, error) {
 	return d.storage, nil
 }
 
-func (d *diContainer) FilmService() (FilmService, error) {
-	if d.filmService == nil {
-		repo, err := d.FilmRepository()
-		if err != nil {
-			return nil, err
-		}
-		d.filmService = service.NewFilmService(repo, d.Config())
+func (d *diContainer) ExternalService() (ExternalService, error) {
+	if d.externalService == nil {
+		d.externalService = externalservice.NewExternalService(d.config)
 	}
-
-	return d.filmService, nil
-}
-
-func (d *diContainer) FilmRepository() (FilmRepository, error) {
-	if d.filmRepository == nil {
-		storage, err := d.Storage()
-		if err != nil {
-			return nil, err
-		}
-		d.filmRepository = repository.NewFilmRepository(storage)
-	}
-	return d.filmRepository, nil
-
-}
-
-func (d *diContainer) FilmSequelRepository() (FilmSequelRepository, error) {
-	if d.filmSequelRepository == nil {
-		storage, err := d.Storage()
-		if err != nil {
-			return nil, err
-		}
-		d.filmSequelRepository = repository.NewFilmSequelRepository(storage)
-	}
-	return d.filmSequelRepository, nil
-}
-
-func (d *diContainer) FilmSimilarRepository() (FilmSimilarRepository, error) {
-	if d.filmSimilarRepository == nil {
-		storage, err := d.Storage()
-		if err != nil {
-			return nil, err
-		}
-		d.filmSimilarRepository = repository.NewFilmSimilarRepository(storage)
-	}
-	return d.filmSimilarRepository, nil
-}
-
-func (d *diContainer) FilmSequelService() (FilmSequelService, error) {
-	if d.filmSequelService == nil {
-		repo, err := d.FilmSequelRepository()
-		if err != nil {
-			return nil, err
-		}
-		filmService, err := d.FilmService()
-		if err != nil {
-
-		}
-		d.filmSequelService = service.NewFilmsSequelService(repo, d.Config(), filmService)
-	}
-	return d.filmSequelService, nil
-}
-
-func (d *diContainer) FilmSimilarService() (FilmSimilarService, error) {
-	if d.filmSimilarService == nil {
-		repo, err := d.FilmSimilarRepository()
-		if err != nil {
-			return nil, err
-		}
-		filmService, err := d.FilmService()
-		if err != nil {
-
-		}
-		d.filmSimilarService = service.NewFilmsSimilarService(repo, d.Config(), filmService)
-	}
-	return d.filmSimilarService, nil
-}
-
-func (d *diContainer) UserService() (UserService, error) {
-	if d.userService == nil {
-		repo, err := d.UserRepository()
-		if err != nil {
-			return nil, err
-		}
-		d.userService = service.NewUserService(repo)
-	}
-	return d.userService, nil
-}
-
-func (d *diContainer) UserRepository() (UserRepository, error) {
-	if d.userRepository == nil {
-		storage, err := d.Storage()
-		if err != nil {
-			return nil, err
-		}
-		d.userRepository = repository.NewUserRepository(storage)
-	}
-	return d.userRepository, nil
+	return d.externalService, nil
 }

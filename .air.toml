@@ -1,6 +1,6 @@
 [build]
-  bin = "./bin/kinopoisk-api"
-  cmd = "go build -o ./bin/ ./cmd/kinopoisk-api/"
+  bin = "./bin/kbox-api"
+  cmd = "go build -o ./bin/ ./cmd/kbox-api/"
 
 [color]
   app = ""

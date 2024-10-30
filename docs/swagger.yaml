@@ -1,0 +1,9 @@
+basePath: /api
+host: petstore.swagger.io
+info:
+  contact: {}
+  description: Kbox API
+  title: Swagger Kbox API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

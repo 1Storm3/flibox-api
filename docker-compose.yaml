@@ -1,23 +1,28 @@
+version: '3.9'
+
 services:
-  kinopoisk-api:
-      image: kinopoisk-api
-      ports:
-        - "8080:8080"
   prometheus:
     image: prom/prometheus:v2.37.9
     ports:
-      - "9090:9090"
+      - "9090:9090"  # Экспонируем порт 9090 для Prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./alerts.yml:/etc/prometheus/alerts.yml
-      - prometheus-data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Конфигурация Prometheus
+    networks:
+      - monitoring_network
+    depends_on:
+      - kinopoisk-api  # Prometheus зависит от API
+
+  kinopoisk-api:
+    build:
+      context: .  # Используем Dockerfile из текущей директории для сборки приложения
+    ports:
+      - "8080:8080"  # Экспонируем порт 8080 для вашего бэкенда
+    networks:
+      - monitoring_network
     env_file:
       - .env
-volumes:
-  prometheus-data:
-#  grafana:
-#    image: grafana/grafana-oss:10.0.3
-#    ports:
-#      - "3000:3000"
-#    volumes:
-#      - grafana-data:/var/lib/grafana
+
+# Глобальное определение сети
+networks:
+  monitoring_network:

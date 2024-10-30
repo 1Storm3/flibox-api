@@ -2,17 +2,21 @@ package app
 
 import (
 	"context"
+	"log"
+	"net"
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/swaggo/fiber-swagger"
+
+	_ "kinopoisk-api/docs"
 	"kinopoisk-api/internal/delivery/rest"
 	"kinopoisk-api/internal/metrics"
 	"kinopoisk-api/internal/metrics/interceptor"
 	"kinopoisk-api/shared/closer"
 	"kinopoisk-api/shared/logger"
-	"log"
-	"net"
-	"net/http"
 )
 
 type App struct {
@@ -74,27 +78,64 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 	}))
 
+	a.httpServer.Get("/swagger/*", fiberSwagger.WrapHandler)
+
 	a.httpServer.Use(interceptor.MetricsInterceptor())
 
-	filmService, err := a.diContainer.FilmService()
-	userService, err := a.diContainer.UserService()
-
-	filmSequelService, err := a.diContainer.FilmSequelService()
-	filmSimilarService, err := a.diContainer.FilmSimilarService()
-
+	filmModule, err := a.diContainer.FilmModule()
+	if err != nil {
+		return err
+	}
+	filmHandler, err := filmModule.FilmHandler()
+	if err != nil {
+		return err
+	}
+	filmSequelModule, err := a.diContainer.FilmSequelModule()
 	if err != nil {
 		return err
 	}
 
-	filmHandler := rest.NewFilmHandler(filmService)
+	filmSequelHandler, err := filmSequelModule.FilmSequelHandler()
+	if err != nil {
+		return err
+	}
+	userModule, err := a.diContainer.UserModule()
+	if err != nil {
+		return err
+	}
 
-	filmSequelHandler := rest.NewFilmSequelHandler(filmSequelService)
+	userHandler, err := userModule.UserHandler()
+	if err != nil {
+		return err
+	}
 
-	userHandler := rest.NewUserHandler(userService)
+	userFilmModule, err := a.diContainer.UserFilmModule()
+	if err != nil {
+		return err
+	}
 
-	filmSimilarHandler := rest.NewFilmSimilarHandler(filmSimilarService)
+	userFilmHandler, err := userFilmModule.UserFilmHandler()
+	if err != nil {
+		return err
+	}
 
-	router := rest.NewRouter(filmHandler, filmSequelHandler, userHandler, filmSimilarHandler)
+	filmSimilarModule, err := a.diContainer.FilmSimilarModule()
+	if err != nil {
+		return err
+	}
+
+	filmSimilarHandler, err := filmSimilarModule.FilmSimilarHandler()
+	if err != nil {
+		return err
+	}
+
+	router := rest.NewRouter(
+		filmHandler,
+		filmSequelHandler,
+		userHandler,
+		filmSimilarHandler,
+		userFilmHandler,
+	)
 	router.LoadRoutes(a.httpServer)
 
 	go func() {

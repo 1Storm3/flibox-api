@@ -1,0 +1,55 @@
+# Версия golangci-lint
+linters-settings:
+  govet:
+    check-shadowing: true
+    enable-all: false # Проверяет переопределение переменных
+  goconst:
+    min-len: 3  # Минимальная длина строк для предложения вынесения в константу
+    min-occurrences: 3  # Минимальное количество повторений для предложения вынесения в константу
+  golint:
+    min-confidence: 0.8  # Минимальная уверенность в нахождении ошибки
+  # Включать только важные проверки
+  staticcheck:
+    checks: [ "all" ]  # Включить все проверки от staticcheck
+  gocyclo:
+    min-complexity: 10  # Порог цикломатической сложности
+  gocritic:
+    enabled-checks: # Включить полезные проверки от gocritic
+      - captLocal
+      - defaultCaseOrder
+      - ifElseChain
+      - importShadow
+      - sloppyLen
+      - unlabelStmt
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - golint
+    - ineffassign
+    - staticcheck
+    - unused
+    - structcheck
+    - varcheck
+  disable:
+    - godox  # Отключает проверку TODO комментариев
+    - nakedret  # Проверка голых возвратов, можно отключить для упрощения кода
+
+run:
+  go: "1.23.1"  # Укажи версию Go
+  timeout: 5m
+  tests: true  # Анализировать код и в тестах
+  concurrency: 4
+
+issues:
+  exclude-use-default: false  # Использовать исключения по умолчанию
+  max-issues-per-linter: 0  # Нет ограничения на количество проблем от одного линтера
+  max-same-issues: 0  # Нет ограничения на количество одинаковых проблем
+
+output:
+  format: tab  # Отчет в удобном табличном формате
