@@ -2,9 +2,6 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/internal/modules/user/service"
-	"kinopoisk-api/shared/logger"
-	"net/http"
 )
 
 type UserHandler struct {
@@ -17,21 +14,12 @@ func NewUserHandler(userService UserService) *UserHandler {
 	}
 }
 
-func (h *UserHandler) GetOne(ctx *fiber.Ctx) error {
-	userToken := ctx.Params("user_token")
+func (h *UserHandler) GetOneByNickName(c *fiber.Ctx) error {
+	nickName := c.Params("nickName")
 
-	user, err := h.userService.GetOne(userToken)
+	user, err := h.userService.GetOneByNickName(nickName)
 	if err != nil {
-		logger.Error(err.Error())
-		return ctx.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return err
 	}
-	if user == (service.User{}) {
-		return ctx.Status(http.StatusNotFound).JSON(fiber.Map{
-			"error":      "Пользователь с таким токеном не найден",
-			"statusCode": http.StatusNotFound,
-		})
-	}
-	return ctx.JSON(user)
+	return c.JSON(user)
 }

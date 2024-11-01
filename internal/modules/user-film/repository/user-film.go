@@ -6,15 +6,14 @@ import (
 	"gorm.io/gorm"
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/modules/user-film/service"
+	"kinopoisk-api/shared/httperror"
+	"net/http"
 	"strconv"
 )
 
 type userFilmRepository struct {
 	storage *postgres.Storage
 }
-
-var ErrAlreadyAdded = errors.New("film is already added")
-var ErrNotFound = errors.New("film not found")
 
 func NewUserFilmRepository(storage *postgres.Storage) *userFilmRepository {
 	return &userFilmRepository{
@@ -31,9 +30,17 @@ func (u *userFilmRepository) GetAll(ctx context.Context, userId string) ([]servi
 		Find(&userFilms)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return []service.UserFilm{}, nil
+		return []service.UserFilm{},
+			httperror.New(
+				http.StatusNotFound,
+				"Избранные фильмы не найдены у этого пользователя",
+			)
 	} else if result.Error != nil {
-		return []service.UserFilm{}, result.Error
+		return []service.UserFilm{},
+			httperror.New(
+				http.StatusInternalServerError,
+				result.Error.Error(),
+			)
 	}
 	return userFilms, nil
 }
@@ -41,19 +48,28 @@ func (u *userFilmRepository) GetAll(ctx context.Context, userId string) ([]servi
 func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId string) error {
 	filmIdInt, err := strconv.Atoi(filmId)
 	if err != nil {
-		return err
+		return httperror.New(
+			http.StatusBadRequest,
+			"Неверный формат ID фильма",
+		)
 	}
 
 	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmIdInt).Find(&service.UserFilm{})
 	if isFavourite.RowsAffected > 0 {
-		return ErrAlreadyAdded
+		return httperror.New(
+			http.StatusConflict,
+			"Фильм уже добавлен в избранное",
+		)
 	}
 	result := u.storage.DB().WithContext(ctx).Create(&service.UserFilm{
 		UserId: userId,
 		FilmId: filmIdInt,
 	})
 	if result.Error != nil {
-		return result.Error
+		return httperror.New(
+			http.StatusInternalServerError,
+			result.Error.Error(),
+		)
 	}
 	return nil
 }
@@ -61,11 +77,17 @@ func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId stri
 func (u *userFilmRepository) Delete(ctx context.Context, userId string, filmId string) error {
 	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmId).Find(&service.UserFilm{})
 	if isFavourite.RowsAffected == 0 {
-		return ErrNotFound
+		return httperror.New(
+			http.StatusNotFound,
+			"Фильм не найден в избранном",
+		)
 	}
 	result := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmId).Delete(&service.UserFilm{})
 	if result.Error != nil {
-		return result.Error
+		return httperror.New(
+			http.StatusInternalServerError,
+			result.Error.Error(),
+		)
 	}
 	return nil
 }

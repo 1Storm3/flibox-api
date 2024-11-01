@@ -2,9 +2,8 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/lib/pq"
-	"kinopoisk-api/internal/service"
+	"kinopoisk-api/internal/modules/external/handler"
 )
 
 type Film struct {
@@ -33,12 +32,12 @@ type FilmSearch struct {
 
 type FilmService struct {
 	filmRepo        FilmRepository
-	externalService service.ExternalService
+	externalService handler.ExternalService
 }
 
 func NewFilmService(
 	filmRepo FilmRepository,
-	externalService service.ExternalService,
+	externalService handler.ExternalService,
 ) *FilmService {
 	return &FilmService{
 		filmRepo:        filmRepo,
@@ -49,13 +48,13 @@ func NewFilmService(
 func (f *FilmService) GetOne(filmId string) (Film, error) {
 	result, err := f.filmRepo.GetOne(context.Background(), filmId)
 	if err != nil {
-		return Film{}, fmt.Errorf("failed to fetch film from repository: %w", err)
+		return Film{}, err
 	}
 
 	if result.ID == nil {
 		externalFilm, err := f.externalService.SetExternalRequest(filmId)
 		if err != nil {
-			return Film{}, fmt.Errorf("failed to get film from Kinopoisk API: %w", err)
+			return Film{}, err
 		}
 		var genres []string
 		for _, genre := range externalFilm.Genres {
@@ -76,7 +75,7 @@ func (f *FilmService) GetOne(filmId string) (Film, error) {
 		}
 
 		if err := f.filmRepo.Save(film); err != nil {
-			return Film{}, fmt.Errorf("failed to save film to repository: %w", err)
+			return Film{}, err
 		}
 
 		return film, nil
@@ -89,7 +88,7 @@ func (f *FilmService) Search(match string, genres []string, page int, pageSize i
 	films, totalRecords, err := f.filmRepo.Search(match, genres, page, pageSize)
 
 	if err != nil {
-		return []FilmSearch{}, 0, fmt.Errorf("failed to fetch films from repository: %w", err)
+		return []FilmSearch{}, 0, err
 	}
 
 	return films, totalRecords, nil

@@ -3,9 +3,13 @@ package repository
 import (
 	"context"
 	"errors"
+	"net/http"
+
 	"gorm.io/gorm"
+
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/modules/film-similar/service"
+	"kinopoisk-api/shared/httperror"
 )
 
 type filmSimilarRepository struct {
@@ -30,7 +34,10 @@ func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]se
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return []service.FilmSimilar{}, nil
 	} else if result.Error != nil {
-		return []service.FilmSimilar{}, result.Error
+		return []service.FilmSimilar{},
+			httperror.New(
+				http.StatusInternalServerError,
+				result.Error.Error())
 	}
 
 	return filmSimilars, nil
@@ -44,16 +51,23 @@ func (s *filmSimilarRepository) Save(filmId int, similarId int) error {
 	if result.Error == nil {
 		return nil
 	} else if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return result.Error
+
+		return httperror.New(
+			http.StatusInternalServerError,
+			result.Error.Error(),
+		)
 	}
 
-	createResult := s.storage.DB().Create(&service.FilmSimilar{
+	createdResult := s.storage.DB().Create(&service.FilmSimilar{
 		FilmId:    filmId,
 		SimilarId: similarId,
 	})
 
-	if createResult.Error != nil {
-		return createResult.Error
+	if createdResult.Error != nil {
+		return httperror.New(
+			http.StatusInternalServerError,
+			createdResult.Error.Error(),
+		)
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package externalservice
+package service
 
 import (
 	"encoding/json"
@@ -44,7 +44,11 @@ func (e *ExternalService) SetExternalRequest(filmId string) (ExternalFilm, error
 	urlAllFilms := fmt.Sprintf("%s%s", baseUrlForAllFilms, filmId)
 	req, err := http.NewRequest("GET", urlAllFilms, nil)
 	if err != nil {
-		return ExternalFilm{}, fmt.Errorf("failed to create request: %w", err)
+		return ExternalFilm{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
 
 	req.Header.Add("X-API-KEY", apiKey)
@@ -52,27 +56,48 @@ func (e *ExternalService) SetExternalRequest(filmId string) (ExternalFilm, error
 	client := &http.Client{}
 	resAllFilms, err := client.Do(req)
 	if err != nil {
-		return ExternalFilm{}, fmt.Errorf("failed to make request to Kinopoisk API: %w", err)
+		return ExternalFilm{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
-	defer resAllFilms.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			return
+		}
+	}(resAllFilms.Body)
 
 	if resAllFilms.StatusCode == http.StatusNotFound {
 		return ExternalFilm{}, httperror.New(http.StatusNotFound, "Фильм не найден")
 	}
 
 	if resAllFilms.StatusCode != http.StatusOK {
-		return ExternalFilm{}, fmt.Errorf("kinopoisk API request failed with status: %d", resAllFilms.StatusCode)
+		return ExternalFilm{},
+			httperror.New(
+				http.StatusInternalServerError,
+				"Не удалось получить данные о фильме c внешнего апи"+resAllFilms.Status,
+			)
 	}
 
 	bodyAllFilms, err := io.ReadAll(resAllFilms.Body)
 	if err != nil {
-		return ExternalFilm{}, fmt.Errorf("failed to read response body: %w", err)
+		return ExternalFilm{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
 
 	var externalFilm ExternalFilm
 	err = json.Unmarshal(bodyAllFilms, &externalFilm)
 	if err != nil {
-		return ExternalFilm{}, fmt.Errorf("failed to unmarshal response body: %w", err)
+		return ExternalFilm{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
 
 	return externalFilm, nil

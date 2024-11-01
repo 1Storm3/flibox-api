@@ -1,7 +1,7 @@
-package service
+package handler
 
 import (
-	externalservice "kinopoisk-api/pkg/external-service"
+	externalservice "kinopoisk-api/internal/modules/external/service"
 )
 
 type ExternalService interface {

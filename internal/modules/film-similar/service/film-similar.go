@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kinopoisk-api/internal/config"
-	service "kinopoisk-api/internal/modules/film/service"
+	"kinopoisk-api/shared/httperror"
 	"net/http"
 	"strconv"
+
+	"kinopoisk-api/internal/config"
+	"kinopoisk-api/internal/modules/film/service"
 )
 
 type ExternalSimilar struct {
@@ -48,7 +50,7 @@ func (s *FilmSimilarService) GetAll(filmId string) ([]service.Film, error) {
 	result, err := s.filmSimilarRepo.GetAll(context.Background(), filmId)
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to fetch similar from repository: %w", err)
+		return []service.Film{}, err
 	}
 
 	if len(result) > 0 {
@@ -57,7 +59,7 @@ func (s *FilmSimilarService) GetAll(filmId string) ([]service.Film, error) {
 			res, err := s.filmService.GetOne(strconv.Itoa(similar.SimilarId))
 
 			if err != nil {
-				return []service.Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
+				return []service.Film{}, err
 			}
 			similars = append(similars, res)
 		}
@@ -76,7 +78,10 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	req, err := http.NewRequest("GET", baseUrlForAllSimilar, nil)
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to create request: %w", err)
+		return []service.Film{}, httperror.New(
+			http.StatusInternalServerError,
+			err.Error(),
+		)
 	}
 
 	req.Header.Add("X-API-KEY", apikey)
@@ -85,9 +90,12 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	resAllSimilars, err := client.Do(req)
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
+		return []service.Film{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
-
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -95,10 +103,21 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 		}
 	}(resAllSimilars.Body)
 
-	if resAllSimilars.StatusCode != 200 {
-		return []service.Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
+	if resAllSimilars.StatusCode != http.StatusOK {
+		return []service.Film{}, httperror.New(
+			http.StatusConflict,
+			"Код ответа Kinopoisk API: "+resAllSimilars.Status,
+		)
 	}
 	bodyAllSimilars, err := io.ReadAll(resAllSimilars.Body)
+
+	if err != nil {
+		return []service.Film{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+	}
 
 	var apiResponse struct {
 		Total int               `json:"total"`
@@ -106,9 +125,6 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	}
 
 	err = json.Unmarshal(bodyAllSimilars, &apiResponse)
-	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
-	}
 	var similars []service.Film
 	for _, similar := range apiResponse.Items {
 		film, err := s.filmService.GetOne(strconv.Itoa(similar.FilmId))
@@ -116,11 +132,14 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 		filmIdInt, err := strconv.Atoi(filmId)
 
 		if err != nil {
-			return []service.Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
+			return []service.Film{},
+				httperror.New(
+					http.StatusInternalServerError,
+					err.Error(),
+				)
 		}
 
 		err = s.filmSimilarRepo.Save(filmIdInt, similar.FilmId)
-
 		if err != nil {
 			return nil, err
 		}

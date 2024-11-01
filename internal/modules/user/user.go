@@ -1,4 +1,4 @@
-package app
+package user
 
 import (
 	"kinopoisk-api/database/postgres"
@@ -7,20 +7,20 @@ import (
 	userservice "kinopoisk-api/internal/modules/user/service"
 )
 
-type userModule struct {
+type Module struct {
 	storage        *postgres.Storage
-	userService    UserService
-	userRepository UserRepository
+	userService    handler.UserService
+	userRepository userservice.UserRepository
 	userHandler    *handler.UserHandler
 }
 
-func NewUserModule(storage *postgres.Storage) *userModule {
-	return &userModule{
+func NewUserModule(storage *postgres.Storage) *Module {
+	return &Module{
 		storage: storage,
 	}
 }
 
-func (u *userModule) UserService() (UserService, error) {
+func (u *Module) UserService() (handler.UserService, error) {
 	if u.userService == nil {
 		repo, err := u.UserRepository()
 		if err != nil {
@@ -31,14 +31,14 @@ func (u *userModule) UserService() (UserService, error) {
 	return u.userService, nil
 }
 
-func (u *userModule) UserRepository() (UserRepository, error) {
+func (u *Module) UserRepository() (userservice.UserRepository, error) {
 	if u.userRepository == nil {
 		u.userRepository = userrepository.NewUserRepository(u.storage)
 	}
 	return u.userRepository, nil
 }
 
-func (u *userModule) UserHandler() (*handler.UserHandler, error) {
+func (u *Module) UserHandler() (*handler.UserHandler, error) {
 	if u.userHandler == nil {
 		userService, err := u.UserService()
 		if err != nil {

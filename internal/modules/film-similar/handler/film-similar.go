@@ -2,8 +2,6 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/shared/logger"
-	"net/http"
 )
 
 type FilmSimilarHandler struct {
@@ -22,13 +20,7 @@ func (h *FilmSimilarHandler) GetAll(ctx *fiber.Ctx) error {
 	filmId := ctx.Params("id")
 	similars, err := h.filmSimilarService.GetAll(filmId)
 	if err != nil {
-		logger.Error(err.Error())
-		ctx.Status(http.StatusConflict)
-		resp := fiber.Map{
-			"error":      err.Error(),
-			"statusCode": http.StatusConflict,
-		}
-		return ctx.JSON(resp)
+		return err
 	}
 	return ctx.JSON(similars)
 }

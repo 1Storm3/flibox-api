@@ -1,14 +1,9 @@
 package handler
 
 import (
-	"errors"
-	"net/http"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-
-	"kinopoisk-api/shared/httperror"
-	"kinopoisk-api/shared/logger"
 )
 
 type FilmHandler struct {
@@ -35,9 +30,7 @@ func (h *FilmHandler) Search(ctx *fiber.Ctx) error {
 	films, totalRecords, err := h.filmService.Search(match, genres, page, pageSize)
 
 	if err != nil {
-		logger.Error(err.Error())
-		ctx.Status(http.StatusInternalServerError)
-		return ctx.JSON(err)
+		return err
 	}
 	totalPages := (totalRecords + int64(pageSize) - 1) / int64(pageSize)
 
@@ -54,25 +47,7 @@ func (h *FilmHandler) GetOneByID(ctx *fiber.Ctx) error {
 	film, err := h.filmService.GetOne(filmId)
 
 	if err != nil {
-		logger.Error(err.Error())
-
-		var httpErr *httperror.Error
-		if errors.As(err, &httpErr) && httpErr.Code() == http.StatusNotFound {
-			ctx.Status(http.StatusNotFound)
-			resp := fiber.Map{
-				"error":      httpErr.Error(),
-				"statusCode": http.StatusNotFound,
-			}
-			return ctx.JSON(resp)
-		}
-
-		ctx.Status(http.StatusInternalServerError)
-
-		resp := fiber.Map{
-			"error": "Internal Server Error",
-			"code":  http.StatusInternalServerError,
-		}
-		return ctx.JSON(resp)
+		return err
 	}
 
 	return ctx.JSON(film)

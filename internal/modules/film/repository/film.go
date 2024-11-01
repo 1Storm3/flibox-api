@@ -3,10 +3,14 @@ package repository
 import (
 	"context"
 	"errors"
+	"net/http"
+
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/modules/film/service"
+	"kinopoisk-api/shared/httperror"
 )
 
 type filmRepository struct {
@@ -20,7 +24,10 @@ func (f *filmRepository) GetOne(ctx context.Context, filmId string) (service.Fil
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return service.Film{}, nil
 	} else if result.Error != nil {
-		return service.Film{}, result.Error
+		return service.Film{},
+			httperror.New(
+				http.StatusInternalServerError,
+				result.Error.Error())
 	}
 
 	return film, nil
@@ -30,7 +37,10 @@ func (f *filmRepository) Save(film service.Film) error {
 	result := f.storage.DB().Create(&film)
 
 	if result.Error != nil {
-		return result.Error
+		return httperror.New(
+			http.StatusInternalServerError,
+			result.Error.Error(),
+		)
 	}
 
 	return nil
@@ -56,7 +66,10 @@ func (f *filmRepository) Search(
 
 	err := query.Count(&totalRecords).Error
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, httperror.New(
+			http.StatusInternalServerError,
+			err.Error(),
+		)
 	}
 
 	err = query.
@@ -65,7 +78,10 @@ func (f *filmRepository) Search(
 		Find(&films).Error
 
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, httperror.New(
+			http.StatusInternalServerError,
+			err.Error(),
+		)
 	}
 
 	return films, totalRecords, nil

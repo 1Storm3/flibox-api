@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
+
 	"log"
 	"net"
 	"net/http"
@@ -16,6 +18,7 @@ import (
 	"kinopoisk-api/internal/metrics"
 	"kinopoisk-api/internal/metrics/interceptor"
 	"kinopoisk-api/shared/closer"
+	"kinopoisk-api/shared/httperror"
 	"kinopoisk-api/shared/logger"
 )
 
@@ -69,12 +72,32 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	if err != nil {
 		log.Fatalf("failed to initialize metrics: %v", err)
 	}
+	a.httpServer = fiber.New(fiber.Config{
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			var httpErr *httperror.Error
 
-	a.httpServer = fiber.New()
+			if errors.As(err, &httpErr) {
+				code = httpErr.Code()
+			}
+			var fiberErr *fiber.Error
+			if errors.As(err, &fiberErr) {
+				code = fiberErr.Code
+			}
+
+			if err != nil {
+				return ctx.Status(code).JSON(fiber.Map{
+					"statusCode": code,
+					"message":    err.Error(),
+				})
+			}
+			return nil
+		},
+	})
 
 	a.httpServer.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 	}))
 
@@ -129,12 +152,23 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
+	authModule, err := a.diContainer.AuthModule()
+	if err != nil {
+		return err
+	}
+
+	authHandler, err := authModule.AuthHandler()
+	if err != nil {
+		return err
+	}
+
 	router := rest.NewRouter(
 		filmHandler,
 		filmSequelHandler,
 		userHandler,
 		filmSimilarHandler,
 		userFilmHandler,
+		authHandler,
 	)
 	router.LoadRoutes(a.httpServer)
 

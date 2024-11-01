@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"kinopoisk-api/internal/modules/film/service"
+	"kinopoisk-api/shared/httperror"
 	"net/http"
 	"strconv"
 
@@ -49,7 +50,7 @@ func (s *FilmSequelService) GetAll(filmId string) ([]service.Film, error) {
 	result, err := s.filmSequelRepo.GetAll(context.Background(), filmId)
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to fetch sequel from repository: %w", err)
+		return []service.Film{}, err
 	}
 	if len(result) > 0 {
 		var sequels []service.Film
@@ -57,7 +58,7 @@ func (s *FilmSequelService) GetAll(filmId string) ([]service.Film, error) {
 			res, err := s.filmService.GetOne(strconv.Itoa(sequel.SequelId))
 
 			if err != nil {
-				return []service.Film{}, fmt.Errorf("failed to fetch sequel from Kinopoisk API: %w", err)
+				return []service.Film{}, err
 			}
 			sequels = append(sequels, res)
 		}
@@ -67,7 +68,7 @@ func (s *FilmSequelService) GetAll(filmId string) ([]service.Film, error) {
 	sequels, err := s.FetchSequels(filmId)
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to fetch sequel from Kinopoisk API: %w", err)
+		return []service.Film{}, err
 	}
 
 	return sequels, nil
@@ -79,7 +80,10 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) 
 	req, err := http.NewRequest("GET", baseUrlForAllSequels, nil)
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to create request: %w", err)
+		return []service.Film{}, httperror.New(
+			http.StatusInternalServerError,
+			err.Error(),
+		)
 	}
 
 	req.Header.Add("X-API-KEY", apiKey)
@@ -87,29 +91,54 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) 
 	client := &http.Client{}
 	resAllSequels, err := client.Do(req)
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to make request to Kinopoisk API: %w", err)
+		return []service.Film{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
-	defer resAllSequels.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			return
+		}
+	}(resAllSequels.Body)
 
 	if resAllSequels.StatusCode != http.StatusOK {
-		return []service.Film{}, fmt.Errorf("kinopoisk API request failed with status: %d", resAllSequels.StatusCode)
+		return []service.Film{}, httperror.New(
+			http.StatusConflict,
+			"Код ответа Kinopoisk API: "+resAllSequels.Status,
+		)
 	}
 
 	bodyAllSequels, err := io.ReadAll(resAllSequels.Body)
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to read response body: %w", err)
+		return []service.Film{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
 
 	var externalSequels []ExternalSequel
+
 	err = json.Unmarshal(bodyAllSequels, &externalSequels)
 	var sequels []service.Film
 	for _, sequel := range externalSequels {
 		film, err := s.filmService.GetOne(strconv.Itoa(sequel.FilmId))
 
+		if err != nil {
+			return []service.Film{}, err
+		}
+
 		filmIdInt, err := strconv.Atoi(filmId)
 
 		if err != nil {
-			return []service.Film{}, fmt.Errorf("failed to convert filmId to int: %w", err)
+			return []service.Film{},
+				httperror.New(
+					http.StatusInternalServerError,
+					err.Error(),
+				)
 		}
 
 		err = s.filmSequelRepo.Save(filmIdInt, sequel.FilmId)
@@ -121,7 +150,11 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) 
 	}
 
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to decode response from Kinopoisk API: %w", err)
+		return []service.Film{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
 	}
 	return sequels, nil
 }

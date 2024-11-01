@@ -3,19 +3,26 @@ package app
 import (
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/config"
-	externalservice "kinopoisk-api/pkg/external-service"
+	"kinopoisk-api/internal/modules/auth"
+	"kinopoisk-api/internal/modules/external"
+	"kinopoisk-api/internal/modules/film"
+	"kinopoisk-api/internal/modules/film-sequel"
+	"kinopoisk-api/internal/modules/film-similar"
+	"kinopoisk-api/internal/modules/user"
+	"kinopoisk-api/internal/modules/user-film"
 )
 
 type diContainer struct {
-	config          *config.Config
-	storage         *postgres.Storage
-	externalService ExternalService
+	config  *config.Config
+	storage *postgres.Storage
 
-	filmModule        *filmModule
-	userModule        *userModule
-	filmSequelModule  *filmSequelModule
-	filmSimilarModule *filmSimilarModule
-	userFilmModule    *userFilmModule
+	filmModule        *film.Module
+	externalModule    *external.Module
+	userModule        *user.Module
+	filmSequelModule  *film_sequel.Module
+	filmSimilarModule *film_similar.Module
+	userFilmModule    *user_film.Module
+	authModule        *auth.Module
 }
 
 func newDIContainer() *diContainer {
@@ -29,7 +36,25 @@ func (d *diContainer) Config() *config.Config {
 	return d.config
 }
 
-func (d *diContainer) UserFilmModule() (*userFilmModule, error) {
+func (d *diContainer) AuthModule() (*auth.Module, error) {
+	if d.authModule == nil {
+		userModule, err := d.UserModule()
+		if err != nil {
+			return nil, err
+		}
+		d.authModule = auth.NewAuthModule(userModule, d.Config())
+	}
+	return d.authModule, nil
+}
+
+func (d *diContainer) ExternalModule() (*external.Module, error) {
+	if d.externalModule == nil {
+		d.externalModule = external.NewExternalModule(d.Config())
+	}
+	return d.externalModule, nil
+}
+
+func (d *diContainer) UserFilmModule() (*user_film.Module, error) {
 	if d.userFilmModule == nil {
 		storage, err := d.Storage()
 		if err != nil {
@@ -39,12 +64,12 @@ func (d *diContainer) UserFilmModule() (*userFilmModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		d.userFilmModule = NewUserFilmModule(storage, filmModule)
+		d.userFilmModule = user_film.NewUserFilmModule(storage, filmModule)
 	}
 	return d.userFilmModule, nil
 }
 
-func (d *diContainer) FilmSimilarModule() (*filmSimilarModule, error) {
+func (d *diContainer) FilmSimilarModule() (*film_similar.Module, error) {
 	if d.filmSimilarModule == nil {
 		storage, err := d.Storage()
 		if err != nil {
@@ -54,38 +79,38 @@ func (d *diContainer) FilmSimilarModule() (*filmSimilarModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		d.filmSimilarModule = NewFilmSimilarModule(storage, d.Config(), filmModule)
+		d.filmSimilarModule = film_similar.NewFilmSimilarModule(storage, d.Config(), filmModule)
 	}
 	return d.filmSimilarModule, nil
 }
 
-func (d *diContainer) FilmModule() (*filmModule, error) {
+func (d *diContainer) FilmModule() (*film.Module, error) {
 	if d.filmModule == nil {
 		storage, err := d.Storage()
 		if err != nil {
 			return nil, err
 		}
-		externalService, err := d.ExternalService()
+		externalModule, err := d.ExternalModule()
 		if err != nil {
 			return nil, err
 		}
-		d.filmModule = NewFilmModule(storage, externalService)
+		d.filmModule = film.NewFilmModule(storage, externalModule)
 	}
 	return d.filmModule, nil
 }
 
-func (d *diContainer) UserModule() (*userModule, error) {
+func (d *diContainer) UserModule() (*user.Module, error) {
 	if d.userModule == nil {
 		storage, err := d.Storage()
 		if err != nil {
 			return nil, err
 		}
-		d.userModule = NewUserModule(storage)
+		d.userModule = user.NewUserModule(storage)
 	}
 	return d.userModule, nil
 }
 
-func (d *diContainer) FilmSequelModule() (*filmSequelModule, error) {
+func (d *diContainer) FilmSequelModule() (*film_sequel.Module, error) {
 	if d.filmSequelModule == nil {
 		storage, err := d.Storage()
 		if err != nil {
@@ -95,7 +120,7 @@ func (d *diContainer) FilmSequelModule() (*filmSequelModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		d.filmSequelModule = NewFilmSequelModule(storage, d.Config(), filmModule)
+		d.filmSequelModule = film_sequel.NewFilmSequelModule(storage, d.Config(), filmModule)
 	}
 	return d.filmSequelModule, nil
 }
@@ -109,11 +134,4 @@ func (d *diContainer) Storage() (*postgres.Storage, error) {
 		}
 	}
 	return d.storage, nil
-}
-
-func (d *diContainer) ExternalService() (ExternalService, error) {
-	if d.externalService == nil {
-		d.externalService = externalservice.NewExternalService(d.config)
-	}
-	return d.externalService, nil
 }

@@ -1,35 +1,36 @@
-package app
+package film_similar
 
 import (
 	"kinopoisk-api/database/postgres"
 	"kinopoisk-api/internal/config"
+	"kinopoisk-api/internal/modules/film"
 	"kinopoisk-api/internal/modules/film-similar/handler"
 	filmsimilarrepository "kinopoisk-api/internal/modules/film-similar/repository"
 	filmsimilarservice "kinopoisk-api/internal/modules/film-similar/service"
 )
 
-type filmSimilarModule struct {
+type Module struct {
 	storage               *postgres.Storage
 	config                *config.Config
-	filmSimilarRepository FilmSimilarRepository
-	filmSimilarService    FilmSimilarService
+	filmSimilarRepository filmsimilarservice.FilmSimilarRepository
+	filmSimilarService    handler.FilmSimilarService
 	filmSimilarHandler    *handler.FilmSimilarHandler
-	filmModule            *filmModule
+	filmModule            *film.Module
 }
 
 func NewFilmSimilarModule(
 	storage *postgres.Storage,
 	config *config.Config,
-	filmModule *filmModule,
-) *filmSimilarModule {
-	return &filmSimilarModule{
+	filmModule *film.Module,
+) *Module {
+	return &Module{
 		storage:    storage,
 		config:     config,
 		filmModule: filmModule,
 	}
 }
 
-func (f *filmSimilarModule) FilmSimilarService() (FilmSimilarService, error) {
+func (f *Module) FilmSimilarService() (handler.FilmSimilarService, error) {
 	if f.filmSimilarService == nil {
 		repo, err := f.FilmSimilarRepository()
 		if err != nil {
@@ -44,14 +45,14 @@ func (f *filmSimilarModule) FilmSimilarService() (FilmSimilarService, error) {
 	return f.filmSimilarService, nil
 }
 
-func (f *filmSimilarModule) FilmSimilarRepository() (FilmSimilarRepository, error) {
+func (f *Module) FilmSimilarRepository() (filmsimilarservice.FilmSimilarRepository, error) {
 	if f.filmSimilarRepository == nil {
 		f.filmSimilarRepository = filmsimilarrepository.NewFilmSimilarRepository(f.storage)
 	}
 	return f.filmSimilarRepository, nil
 }
 
-func (f *filmSimilarModule) FilmSimilarHandler() (*handler.FilmSimilarHandler, error) {
+func (f *Module) FilmSimilarHandler() (*handler.FilmSimilarHandler, error) {
 	if f.filmSimilarHandler == nil {
 		filmSimilarService, err := f.FilmSimilarService()
 		if err != nil {
