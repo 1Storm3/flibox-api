@@ -7,23 +7,25 @@ import (
 	"sync"
 )
 
+// создаем глобальный closer
 var globalCloser = New()
 
+// Add добавляет функцию закрытия в глобальный closer
 func Add(f ...func() error) {
 	globalCloser.Add(f...)
 }
 
-// Wait ...
+// Wait ждет, пока все функции закрытия завершатся
 func Wait() {
 	globalCloser.Wait()
 }
 
-// CloseAll ...
+// CloseAll запускает все функции закрытия
 func CloseAll() {
 	globalCloser.CloseAll()
 }
 
-// Closer ...
+// Closer управляет списком функций закрытия
 type Closer struct {
 	mu    sync.Mutex
 	once  sync.Once
@@ -31,7 +33,7 @@ type Closer struct {
 	funcs []func() error
 }
 
-// New returns new Closer, if []os.Signal is specified Closer will automatically call CloseAll when one of signals is received from OS
+// New возвращает новый Closer и обрабатывает системные сигналы для вызова CloseAll
 func New(sig ...os.Signal) *Closer {
 	c := &Closer{done: make(chan struct{})}
 	if len(sig) > 0 {
@@ -46,19 +48,19 @@ func New(sig ...os.Signal) *Closer {
 	return c
 }
 
-// Add func to closer
+// Add добавляет одну или несколько функций закрытия в closer
 func (c *Closer) Add(f ...func() error) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.funcs = append(c.funcs, f...)
-	c.mu.Unlock()
 }
 
-// Wait blocks until all closer functions are done
+// Wait блокирует выполнение до завершения всех функций закрытия
 func (c *Closer) Wait() {
 	<-c.done
 }
 
-// CloseAll calls all closer functions
+// CloseAll вызывает все функции закрытия
 func (c *Closer) CloseAll() {
 	c.once.Do(func() {
 		defer close(c.done)
@@ -68,17 +70,30 @@ func (c *Closer) CloseAll() {
 		c.funcs = nil
 		c.mu.Unlock()
 
-		// call all Closer funcs async
+		var wg sync.WaitGroup
 		errs := make(chan error, len(funcs))
+
+		// Запускаем каждую функцию закрытия в отдельной горутине
 		for _, f := range funcs {
+			wg.Add(1)
 			go func(f func() error) {
-				errs <- f()
+				defer wg.Done()
+				if err := f(); err != nil {
+					errs <- err
+				}
 			}(f)
 		}
 
-		for i := 0; i < cap(errs); i++ {
-			if err := <-errs; err != nil {
-				log.Println("httperror returned from Closer")
+		// Закрываем канал errs, как только все горутины завершат выполнение
+		go func() {
+			wg.Wait()
+			close(errs)
+		}()
+
+		// Читаем ошибки из канала и выводим их
+		for err := range errs {
+			if err != nil {
+				log.Printf("Error returned from closer: %v", err)
 			}
 		}
 	})

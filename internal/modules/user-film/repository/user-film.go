@@ -3,12 +3,14 @@ package repository
 import (
 	"context"
 	"errors"
-	"gorm.io/gorm"
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/modules/user-film/service"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
 	"strconv"
+
+	"gorm.io/gorm"
+
+	"kbox-api/database/postgres"
+	"kbox-api/internal/model"
+	"kbox-api/shared/httperror"
 )
 
 type userFilmRepository struct {
@@ -21,8 +23,8 @@ func NewUserFilmRepository(storage *postgres.Storage) *userFilmRepository {
 	}
 }
 
-func (u *userFilmRepository) GetAll(ctx context.Context, userId string) ([]service.UserFilm, error) {
-	var userFilms []service.UserFilm
+func (u *userFilmRepository) GetAll(ctx context.Context, userId string) ([]model.UserFilm, error) {
+	var userFilms []model.UserFilm
 	result := u.storage.DB().
 		WithContext(ctx).
 		Where("user_id = ?", userId).
@@ -30,13 +32,13 @@ func (u *userFilmRepository) GetAll(ctx context.Context, userId string) ([]servi
 		Find(&userFilms)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return []service.UserFilm{},
+		return []model.UserFilm{},
 			httperror.New(
 				http.StatusNotFound,
 				"Избранные фильмы не найдены у этого пользователя",
 			)
 	} else if result.Error != nil {
-		return []service.UserFilm{},
+		return []model.UserFilm{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error(),
@@ -54,14 +56,14 @@ func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId stri
 		)
 	}
 
-	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmIdInt).Find(&service.UserFilm{})
+	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmIdInt).Find(&model.UserFilm{})
 	if isFavourite.RowsAffected > 0 {
 		return httperror.New(
 			http.StatusConflict,
 			"Фильм уже добавлен в избранное",
 		)
 	}
-	result := u.storage.DB().WithContext(ctx).Create(&service.UserFilm{
+	result := u.storage.DB().WithContext(ctx).Create(&model.UserFilm{
 		UserId: userId,
 		FilmId: filmIdInt,
 	})
@@ -75,14 +77,14 @@ func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId stri
 }
 
 func (u *userFilmRepository) Delete(ctx context.Context, userId string, filmId string) error {
-	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmId).Find(&service.UserFilm{})
+	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmId).Find(&model.UserFilm{})
 	if isFavourite.RowsAffected == 0 {
 		return httperror.New(
 			http.StatusNotFound,
 			"Фильм не найден в избранном",
 		)
 	}
-	result := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmId).Delete(&service.UserFilm{})
+	result := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmId).Delete(&model.UserFilm{})
 	if result.Error != nil {
 		return httperror.New(
 			http.StatusInternalServerError,

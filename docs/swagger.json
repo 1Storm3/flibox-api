@@ -2,11 +2,71 @@
     "swagger": "2.0",
     "info": {
         "description": "Kbox API",
-        "title": "Swagger Kbox API",
+        "title": "Swagger Kbox API2",
         "contact": {},
         "version": "1.0"
     },
-    "host": "petstore.swagger.io",
+    "host": "localhost:8080",
     "basePath": "/api",
-    "paths": {}
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Login to the application",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "description": "Login information",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "token"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httperror.Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.LoginDTO": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email пользователя\nrequired: true\nexample: user@example.com",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Пароль пользователя\nrequired: true\nmin length: 6\nexample: password123",
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "httperror.Error": {
+            "type": "object"
+        }
+    }
 }

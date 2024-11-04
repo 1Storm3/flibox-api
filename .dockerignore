@@ -2,8 +2,8 @@
 .vscode
 bin
 /bin/
-docker-compose.yaml
-Dockerfile
+deploy/docker-compose.yaml
+deploy/Dockerfile
 Makefile
 .gitignore
 README.md

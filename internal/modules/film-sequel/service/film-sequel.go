@@ -5,30 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kinopoisk-api/internal/modules/film/service"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
 	"strconv"
 
-	"kinopoisk-api/internal/config"
+	"kbox-api/internal/config"
+	"kbox-api/internal/modules/film-sequel/dto"
+	dtoFilm "kbox-api/internal/modules/film/dto"
+	"kbox-api/internal/modules/film/handler"
+	"kbox-api/shared/httperror"
 )
-
-type ExternalSequel struct {
-	FilmId       int     `json:"filmId"`
-	NameRu       *string `json:"nameRu"`
-	NameOriginal *string `json:"nameOriginal"`
-	PosterUrl    *string `json:"posterUrl"`
-}
-
-type FilmSequel struct {
-	SequelId int          `json:"sequelId" gorm:"column:sequel_id"`
-	FilmId   int          `json:"filmId" gorm:"column:film_id"`
-	Film     service.Film `gorm:"foreignKey:FilmId;references:ID"`
-}
 
 type FilmSequelService struct {
 	filmSequelRepo FilmSequelRepository
-	filmService    service.FilmServiceI
+	filmService    handler.FilmService
 	config         *config.Config
 }
 
@@ -37,7 +26,7 @@ const baseUrlForAllSequels = "https://kinopoiskapiunofficial.tech/api/v2.1/films
 func NewFilmsSequelService(
 	filmSequelRepo FilmSequelRepository,
 	config *config.Config,
-	filmService service.FilmServiceI,
+	filmService handler.FilmService,
 ) *FilmSequelService {
 	return &FilmSequelService{
 		filmSequelRepo: filmSequelRepo,
@@ -46,19 +35,19 @@ func NewFilmsSequelService(
 	}
 }
 
-func (s *FilmSequelService) GetAll(filmId string) ([]service.Film, error) {
+func (s *FilmSequelService) GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, error) {
 	result, err := s.filmSequelRepo.GetAll(context.Background(), filmId)
 
 	if err != nil {
-		return []service.Film{}, err
+		return []dtoFilm.FilmResponseDTO{}, err
 	}
 	if len(result) > 0 {
-		var sequels []service.Film
+		var sequels []dtoFilm.FilmResponseDTO
 		for _, sequel := range result {
 			res, err := s.filmService.GetOne(strconv.Itoa(sequel.SequelId))
 
 			if err != nil {
-				return []service.Film{}, err
+				return []dtoFilm.FilmResponseDTO{}, err
 			}
 			sequels = append(sequels, res)
 		}
@@ -68,19 +57,19 @@ func (s *FilmSequelService) GetAll(filmId string) ([]service.Film, error) {
 	sequels, err := s.FetchSequels(filmId)
 
 	if err != nil {
-		return []service.Film{}, err
+		return []dtoFilm.FilmResponseDTO{}, err
 	}
 
 	return sequels, nil
 }
 
-func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) {
+func (s *FilmSequelService) FetchSequels(filmId string) ([]dtoFilm.FilmResponseDTO, error) {
 	apiKey := s.config.DB.ApiKey
 	baseUrlForAllSequels := fmt.Sprintf(baseUrlForAllSequels, filmId)
 	req, err := http.NewRequest("GET", baseUrlForAllSequels, nil)
 
 	if err != nil {
-		return []service.Film{}, httperror.New(
+		return []dtoFilm.FilmResponseDTO{}, httperror.New(
 			http.StatusInternalServerError,
 			err.Error(),
 		)
@@ -91,7 +80,7 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) 
 	client := &http.Client{}
 	resAllSequels, err := client.Do(req)
 	if err != nil {
-		return []service.Film{},
+		return []dtoFilm.FilmResponseDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
@@ -105,36 +94,36 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) 
 	}(resAllSequels.Body)
 
 	if resAllSequels.StatusCode != http.StatusOK {
-		return []service.Film{}, httperror.New(
-			http.StatusConflict,
-			"Код ответа Kinopoisk API: "+resAllSequels.Status,
+		return []dtoFilm.FilmResponseDTO{}, httperror.New(
+			http.StatusNotFound,
+			"Сиквелы не найдены",
 		)
 	}
 
 	bodyAllSequels, err := io.ReadAll(resAllSequels.Body)
 	if err != nil {
-		return []service.Film{},
+		return []dtoFilm.FilmResponseDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
 			)
 	}
 
-	var externalSequels []ExternalSequel
+	var externalSequels []dto.GetExternalSequelResponseDTO
 
 	err = json.Unmarshal(bodyAllSequels, &externalSequels)
-	var sequels []service.Film
+	var sequels []dtoFilm.FilmResponseDTO
 	for _, sequel := range externalSequels {
 		film, err := s.filmService.GetOne(strconv.Itoa(sequel.FilmId))
 
 		if err != nil {
-			return []service.Film{}, err
+			return []dtoFilm.FilmResponseDTO{}, err
 		}
 
 		filmIdInt, err := strconv.Atoi(filmId)
 
 		if err != nil {
-			return []service.Film{},
+			return []dtoFilm.FilmResponseDTO{},
 				httperror.New(
 					http.StatusInternalServerError,
 					err.Error(),
@@ -150,7 +139,7 @@ func (s *FilmSequelService) FetchSequels(filmId string) ([]service.Film, error) 
 	}
 
 	if err != nil {
-		return []service.Film{},
+		return []dtoFilm.FilmResponseDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),

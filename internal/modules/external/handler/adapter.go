@@ -1,9 +1,14 @@
 package handler
 
 import (
-	externalservice "kinopoisk-api/internal/modules/external/service"
+	"context"
+	"kbox-api/internal/modules/external/dto"
 )
 
 type ExternalService interface {
-	SetExternalRequest(filmId string) (externalservice.ExternalFilm, error)
+	SetExternalRequest(filmId string) (dto.GetExternalFilmDTO, error)
+}
+
+type S3Service interface {
+	UploadFile(ctx context.Context, key string, file []byte) (string, error)
 }

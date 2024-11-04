@@ -1,8 +1,10 @@
 package handler
 
-import filmservice "kinopoisk-api/internal/modules/film/service"
+import (
+	"kbox-api/internal/modules/film/dto"
+)
 
 type FilmService interface {
-	GetOne(filmId string) (filmservice.Film, error)
-	Search(match string, genres []string, page, pageSize int) ([]filmservice.FilmSearch, int64, error)
+	GetOne(filmId string) (dto.FilmResponseDTO, error)
+	Search(match string, genres []string, page, pageSize int) ([]dto.FilmSearchResponseDTO, int64, error)
 }

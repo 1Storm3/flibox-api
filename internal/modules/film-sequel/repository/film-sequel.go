@@ -7,9 +7,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/modules/film-sequel/service"
-	"kinopoisk-api/shared/httperror"
+	"kbox-api/database/postgres"
+	"kbox-api/internal/model"
+	"kbox-api/shared/httperror"
 )
 
 type filmSequelRepository struct {
@@ -22,8 +22,8 @@ func NewFilmSequelRepository(storage *postgres.Storage) *filmSequelRepository {
 	}
 }
 
-func (s *filmSequelRepository) GetAll(ctx context.Context, filmId string) ([]service.FilmSequel, error) {
-	var filmSequels []service.FilmSequel
+func (s *filmSequelRepository) GetAll(ctx context.Context, filmId string) ([]model.FilmSequel, error) {
+	var filmSequels []model.FilmSequel
 	result := s.storage.DB().
 		WithContext(ctx).
 		Where("film_id = ?", filmId).
@@ -31,9 +31,9 @@ func (s *filmSequelRepository) GetAll(ctx context.Context, filmId string) ([]ser
 		Find(&filmSequels)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return []service.FilmSequel{}, nil
+		return []model.FilmSequel{}, nil
 	} else if result.Error != nil {
-		return []service.FilmSequel{}, httperror.New(
+		return []model.FilmSequel{}, httperror.New(
 			http.StatusInternalServerError,
 			result.Error.Error(),
 		)
@@ -42,7 +42,7 @@ func (s *filmSequelRepository) GetAll(ctx context.Context, filmId string) ([]ser
 }
 
 func (s *filmSequelRepository) Save(filmId int, sequelId int) error {
-	var existingSequel service.FilmSequel
+	var existingSequel model.FilmSequel
 
 	result := s.storage.DB().Where("film_id = ? AND sequel_id = ?", filmId, sequelId).First(&existingSequel)
 
@@ -56,7 +56,7 @@ func (s *filmSequelRepository) Save(filmId int, sequelId int) error {
 		)
 	}
 
-	createdResult := s.storage.DB().Create(&service.FilmSequel{
+	createdResult := s.storage.DB().Create(&model.FilmSequel{
 		FilmId:   filmId,
 		SequelId: sequelId,
 	})

@@ -2,24 +2,14 @@ package app
 
 import (
 	"context"
-	"errors"
-
 	"log"
 	"net"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/swaggo/fiber-swagger"
 
-	_ "kinopoisk-api/docs"
-	"kinopoisk-api/internal/delivery/rest"
-	"kinopoisk-api/internal/metrics"
-	"kinopoisk-api/internal/metrics/interceptor"
-	"kinopoisk-api/shared/closer"
-	"kinopoisk-api/shared/httperror"
-	"kinopoisk-api/shared/logger"
+	"kbox-api/shared/closer"
 )
 
 type App struct {
@@ -67,113 +57,20 @@ func (a *App) initDeps(ctx context.Context) error {
 }
 
 func (a *App) initHTTPServer(ctx context.Context) error {
-
-	err := metrics.Init(ctx)
-	if err != nil {
+	if err := a.initMetrics(ctx); err != nil {
 		log.Fatalf("failed to initialize metrics: %v", err)
 	}
-	a.httpServer = fiber.New(fiber.Config{
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			var httpErr *httperror.Error
 
-			if errors.As(err, &httpErr) {
-				code = httpErr.Code()
-			}
-			var fiberErr *fiber.Error
-			if errors.As(err, &fiberErr) {
-				code = fiberErr.Code
-			}
+	a.initFiberServer()
+	a.initCORS()
+	a.initJWT()
 
-			if err != nil {
-				return ctx.Status(code).JSON(fiber.Map{
-					"statusCode": code,
-					"message":    err.Error(),
-				})
-			}
-			return nil
-		},
-	})
-
-	a.httpServer.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-	}))
-
-	a.httpServer.Get("/swagger/*", fiberSwagger.WrapHandler)
-
-	a.httpServer.Use(interceptor.MetricsInterceptor())
-
-	filmModule, err := a.diContainer.FilmModule()
-	if err != nil {
+	if err := a.initModulesAndHandlers(); err != nil {
 		return err
 	}
-	filmHandler, err := filmModule.FilmHandler()
-	if err != nil {
-		return err
-	}
-	filmSequelModule, err := a.diContainer.FilmSequelModule()
-	if err != nil {
-		return err
-	}
-
-	filmSequelHandler, err := filmSequelModule.FilmSequelHandler()
-	if err != nil {
-		return err
-	}
-	userModule, err := a.diContainer.UserModule()
-	if err != nil {
-		return err
-	}
-
-	userHandler, err := userModule.UserHandler()
-	if err != nil {
-		return err
-	}
-
-	userFilmModule, err := a.diContainer.UserFilmModule()
-	if err != nil {
-		return err
-	}
-
-	userFilmHandler, err := userFilmModule.UserFilmHandler()
-	if err != nil {
-		return err
-	}
-
-	filmSimilarModule, err := a.diContainer.FilmSimilarModule()
-	if err != nil {
-		return err
-	}
-
-	filmSimilarHandler, err := filmSimilarModule.FilmSimilarHandler()
-	if err != nil {
-		return err
-	}
-
-	authModule, err := a.diContainer.AuthModule()
-	if err != nil {
-		return err
-	}
-
-	authHandler, err := authModule.AuthHandler()
-	if err != nil {
-		return err
-	}
-
-	router := rest.NewRouter(
-		filmHandler,
-		filmSequelHandler,
-		userHandler,
-		filmSimilarHandler,
-		userFilmHandler,
-		authHandler,
-	)
-	router.LoadRoutes(a.httpServer)
 
 	go func() {
-		err = a.runPrometheus()
+		err := a.runPrometheus()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -185,16 +82,6 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initDIContainer(_ context.Context) error {
-	a.diContainer = newDIContainer()
-
-	return nil
-}
-
-func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.diContainer.Config().Env)
-	return nil
-}
 func (a *App) runHTTPServer() error {
 
 	l, err := net.Listen("tcp", a.diContainer.Config().App.HostPort())

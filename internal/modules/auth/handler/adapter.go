@@ -2,12 +2,13 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/internal/modules/auth/service"
-	userservice "kinopoisk-api/internal/modules/user/service"
+
+	"kbox-api/internal/model"
+	"kbox-api/internal/modules/auth/dto"
 )
 
 type AuthService interface {
-	Login(email string, password string) (string, error)
-	Register(user service.RequestUser) (string, error)
-	Me(c *fiber.Ctx) (userservice.User, error)
+	Login(dto dto.LoginDTO) (string, error)
+	Register(user dto.RegisterDTO) (string, error)
+	Me(c *fiber.Ctx) (model.User, error)
 }

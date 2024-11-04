@@ -1,9 +1,55 @@
 basePath: /api
-host: petstore.swagger.io
+definitions:
+  dto.LoginDTO:
+    properties:
+      email:
+        description: |-
+          Email пользователя
+          required: true
+          example: user@example.com
+        type: string
+      password:
+        description: |-
+          Пароль пользователя
+          required: true
+          min length: 6
+          example: password123
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  httperror.Error:
+    type: object
+host: localhost:8080
 info:
   contact: {}
   description: Kbox API
-  title: Swagger Kbox API
+  title: Swagger Kbox API2
   version: "1.0"
-paths: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login to the application
+      parameters:
+      - description: Login information
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: token
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httperror.Error'
 swagger: "2.0"

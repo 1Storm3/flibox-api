@@ -2,33 +2,14 @@ package service
 
 import (
 	"context"
+
 	"github.com/lib/pq"
-	"kinopoisk-api/internal/modules/external/handler"
+
+	"kbox-api/internal/model"
+	"kbox-api/internal/modules/external/handler"
+	"kbox-api/internal/modules/film/dto"
+	"kbox-api/internal/modules/film/mapper"
 )
-
-type Film struct {
-	ID              *int           `json:"kinopoiskId" gorm:"column:id"`
-	NameRU          *string        `json:"nameRu" gorm:"column:name_ru"`
-	NameOriginal    *string        `json:"nameOriginal" gorm:"column:name_original"`
-	Year            *int           `json:"year" gorm:"column:year"`
-	PosterURL       *string        `json:"posterUrl" gorm:"column:poster_url"`
-	RatingKinopoisk *float64       `json:"ratingKinopoisk" gorm:"column:rating_kinopoisk"`
-	Description     *string        `json:"description" gorm:"column:description"`
-	LogoURL         *string        `json:"logoUrl" gorm:"column:logo_url"`
-	Type            *string        `json:"type" gorm:"column:type"`
-	Sequels         []*Film        `gorm:"many2many:film_sequels;joinForeignKey:film_id;JoinReferences:sequel_id"`
-	Similars        []*Film        `gorm:"many2many:film_similars;joinForeignKey:film_id;JoinReferences:similar_id"`
-	Genres          pq.StringArray `json:"genres" gorm:"type:text[];column:genres"`
-}
-
-type FilmSearch struct {
-	ID              *int     `json:"kinopoiskId"`
-	NameRU          *string  `json:"nameRu"`
-	NameOriginal    *string  `json:"nameOriginal"`
-	Year            *int     `json:"year"`
-	RatingKinopoisk *float64 `json:"ratingKinopoisk" gorm:"column:rating_kinopoisk"`
-	PosterURL       *string  `json:"posterUrl"`
-}
 
 type FilmService struct {
 	filmRepo        FilmRepository
@@ -45,23 +26,23 @@ func NewFilmService(
 	}
 }
 
-func (f *FilmService) GetOne(filmId string) (Film, error) {
+func (f *FilmService) GetOne(filmId string) (dto.FilmResponseDTO, error) {
 	result, err := f.filmRepo.GetOne(context.Background(), filmId)
 	if err != nil {
-		return Film{}, err
+		return dto.FilmResponseDTO{}, err
 	}
 
 	if result.ID == nil {
 		externalFilm, err := f.externalService.SetExternalRequest(filmId)
 		if err != nil {
-			return Film{}, err
+			return dto.FilmResponseDTO{}, err
 		}
 		var genres []string
 		for _, genre := range externalFilm.Genres {
 			genres = append(genres, genre.Genre)
 		}
 
-		film := Film{
+		film := model.Film{
 			ID:              externalFilm.ID,
 			NameRU:          externalFilm.NameRU,
 			NameOriginal:    externalFilm.NameOriginal,
@@ -75,21 +56,29 @@ func (f *FilmService) GetOne(filmId string) (Film, error) {
 		}
 
 		if err := f.filmRepo.Save(film); err != nil {
-			return Film{}, err
+			return dto.FilmResponseDTO{}, err
 		}
 
-		return film, nil
+		filmDTO := mapper.MapModelFilmToResponseDTO(film)
+
+		return filmDTO, nil
 	}
 
-	return result, nil
+	filmDTO := mapper.MapModelFilmToResponseDTO(result)
+	return filmDTO, nil
 }
 
-func (f *FilmService) Search(match string, genres []string, page int, pageSize int) ([]FilmSearch, int64, error) {
+func (f *FilmService) Search(match string, genres []string, page int, pageSize int) ([]dto.FilmSearchResponseDTO, int64, error) {
 	films, totalRecords, err := f.filmRepo.Search(match, genres, page, pageSize)
 
 	if err != nil {
-		return []FilmSearch{}, 0, err
+		return []dto.FilmSearchResponseDTO{}, 0, err
 	}
 
-	return films, totalRecords, nil
+	var filmsDTO []dto.FilmSearchResponseDTO
+	for _, film := range films {
+		filmsDTO = append(filmsDTO, mapper.MapModelFilmToResponseSearchDTO(film))
+	}
+
+	return filmsDTO, totalRecords, nil
 }

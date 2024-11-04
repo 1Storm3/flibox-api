@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"kinopoisk-api/internal/config"
-	"kinopoisk-api/internal/modules/auth/handler"
-	"kinopoisk-api/internal/modules/auth/service"
-	"kinopoisk-api/internal/modules/user"
+	"kbox-api/internal/config"
+	"kbox-api/internal/modules/auth/handler"
+	"kbox-api/internal/modules/auth/service"
+	"kbox-api/internal/modules/user"
 )
 
 type Module struct {
@@ -27,7 +27,7 @@ func (a *Module) AuthService() (handler.AuthService, error) {
 		if err != nil {
 			return nil, err
 		}
-		a.authService = service.NewAuthService(userService)
+		a.authService = service.NewAuthService(userService, a.config)
 	}
 	return a.authService, nil
 }

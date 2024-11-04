@@ -6,28 +6,12 @@ import (
 	"io"
 	"net/http"
 
-	"kinopoisk-api/internal/config"
-	"kinopoisk-api/shared/httperror"
+	"kbox-api/internal/config"
+	"kbox-api/internal/modules/external/dto"
+	"kbox-api/shared/httperror"
 )
 
 const baseUrlForAllFilms = "https://kinopoiskapiunofficial.tech/api/v2.2/films/"
-
-type ExternalFilm struct {
-	ID              *int     `json:"kinopoiskId"`
-	NameRU          *string  `json:"nameRu"`
-	NameOriginal    *string  `json:"nameOriginal"`
-	Year            *int     `json:"year"`
-	PosterURL       *string  `json:"posterUrl"`
-	RatingKinopoisk *float64 `json:"ratingKinopoisk"`
-	Description     *string  `json:"description"`
-	LogoURL         *string  `json:"logoUrl"`
-	Type            *string  `json:"type"`
-	Genres          []Genre  `json:"genres"`
-}
-
-type Genre struct {
-	Genre string `json:"genre"`
-}
 
 type ExternalService struct {
 	config *config.Config
@@ -39,12 +23,12 @@ func NewExternalService(config *config.Config) *ExternalService {
 	}
 }
 
-func (e *ExternalService) SetExternalRequest(filmId string) (ExternalFilm, error) {
+func (e *ExternalService) SetExternalRequest(filmId string) (dto.GetExternalFilmDTO, error) {
 	apiKey := e.config.DB.ApiKey
 	urlAllFilms := fmt.Sprintf("%s%s", baseUrlForAllFilms, filmId)
 	req, err := http.NewRequest("GET", urlAllFilms, nil)
 	if err != nil {
-		return ExternalFilm{},
+		return dto.GetExternalFilmDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
@@ -56,7 +40,7 @@ func (e *ExternalService) SetExternalRequest(filmId string) (ExternalFilm, error
 	client := &http.Client{}
 	resAllFilms, err := client.Do(req)
 	if err != nil {
-		return ExternalFilm{},
+		return dto.GetExternalFilmDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
@@ -70,11 +54,11 @@ func (e *ExternalService) SetExternalRequest(filmId string) (ExternalFilm, error
 	}(resAllFilms.Body)
 
 	if resAllFilms.StatusCode == http.StatusNotFound {
-		return ExternalFilm{}, httperror.New(http.StatusNotFound, "Фильм не найден")
+		return dto.GetExternalFilmDTO{}, httperror.New(http.StatusNotFound, "Фильм не найден")
 	}
 
 	if resAllFilms.StatusCode != http.StatusOK {
-		return ExternalFilm{},
+		return dto.GetExternalFilmDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				"Не удалось получить данные о фильме c внешнего апи"+resAllFilms.Status,
@@ -83,17 +67,17 @@ func (e *ExternalService) SetExternalRequest(filmId string) (ExternalFilm, error
 
 	bodyAllFilms, err := io.ReadAll(resAllFilms.Body)
 	if err != nil {
-		return ExternalFilm{},
+		return dto.GetExternalFilmDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
 			)
 	}
 
-	var externalFilm ExternalFilm
+	var externalFilm dto.GetExternalFilmDTO
 	err = json.Unmarshal(bodyAllFilms, &externalFilm)
 	if err != nil {
-		return ExternalFilm{},
+		return dto.GetExternalFilmDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),

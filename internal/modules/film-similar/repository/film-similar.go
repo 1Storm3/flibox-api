@@ -7,9 +7,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/modules/film-similar/service"
-	"kinopoisk-api/shared/httperror"
+	"kbox-api/database/postgres"
+	"kbox-api/internal/model"
+	"kbox-api/shared/httperror"
 )
 
 type filmSimilarRepository struct {
@@ -22,8 +22,8 @@ func NewFilmSimilarRepository(storage *postgres.Storage) *filmSimilarRepository 
 	}
 }
 
-func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]service.FilmSimilar, error) {
-	var filmSimilars []service.FilmSimilar
+func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]model.FilmSimilar, error) {
+	var filmSimilars []model.FilmSimilar
 
 	result := s.storage.DB().
 		WithContext(ctx).
@@ -32,9 +32,9 @@ func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]se
 		Find(&filmSimilars)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return []service.FilmSimilar{}, nil
+		return []model.FilmSimilar{}, nil
 	} else if result.Error != nil {
-		return []service.FilmSimilar{},
+		return []model.FilmSimilar{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error())
@@ -44,7 +44,7 @@ func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]se
 }
 
 func (s *filmSimilarRepository) Save(filmId int, similarId int) error {
-	var existingSimilar service.FilmSimilar
+	var existingSimilar model.FilmSimilar
 
 	result := s.storage.DB().Where("film_id = ? AND similar_id = ?", filmId, similarId).First(&existingSimilar)
 
@@ -58,7 +58,7 @@ func (s *filmSimilarRepository) Save(filmId int, similarId int) error {
 		)
 	}
 
-	createdResult := s.storage.DB().Create(&service.FilmSimilar{
+	createdResult := s.storage.DB().Create(&model.FilmSimilar{
 		FilmId:    filmId,
 		SimilarId: similarId,
 	})

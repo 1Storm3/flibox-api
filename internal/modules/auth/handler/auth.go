@@ -1,16 +1,14 @@
 package handler
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/internal/modules/auth/service"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
-)
 
-type RequestLogin struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
-}
+	"github.com/gofiber/fiber/v2"
+
+	"kbox-api/internal/modules/auth/dto"
+	"kbox-api/internal/modules/auth/mapper"
+	"kbox-api/shared/httperror"
+)
 
 type AuthHandler struct {
 	authService AuthService
@@ -22,8 +20,16 @@ func NewAuthHandler(authService AuthService) *AuthHandler {
 	}
 }
 
+// Login @Summary Login user
+// @Description Login to the application
+// @Accept  json
+// @Produce  json
+// @Param login body dto.LoginDTO true "Login information"
+// @Success 200 token string
+// @Failure 400 {object} httperror.Error
+// @Router /auth/login [post]
 func (a *AuthHandler) Login(c *fiber.Ctx) error {
-	var loginData RequestLogin
+	var loginData dto.LoginDTO
 	if err := c.BodyParser(&loginData); err != nil {
 
 		return httperror.New(
@@ -31,7 +37,7 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 			err.Error(),
 		)
 	}
-	token, err := a.authService.Login(loginData.Email, loginData.Password)
+	token, err := a.authService.Login(loginData)
 	if err != nil {
 		return err
 	}
@@ -42,7 +48,7 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 func (a *AuthHandler) Register(c *fiber.Ctx) error {
-	var requestUser service.RequestUser
+	var requestUser dto.RegisterDTO
 	if err := c.BodyParser(&requestUser); err != nil {
 		return httperror.New(
 			http.StatusBadRequest,
@@ -59,9 +65,12 @@ func (a *AuthHandler) Register(c *fiber.Ctx) error {
 	})
 }
 func (a *AuthHandler) Me(c *fiber.Ctx) error {
-	user, err := a.authService.Me(c)
+	result, err := a.authService.Me(c)
 	if err != nil {
 		return err
 	}
+
+	user := mapper.MapModelUserToResponseDTO(result)
+
 	return c.JSON(user)
 }

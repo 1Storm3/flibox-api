@@ -1,11 +1,13 @@
 package handler
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/internal/modules/film/handler"
-	"kinopoisk-api/shared/httperror"
-	"kinopoisk-api/shared/logger"
 	"net/http"
+
+	"github.com/gofiber/fiber/v2"
+
+	"kbox-api/internal/modules/film/handler"
+	"kbox-api/pkg/token"
+	"kbox-api/shared/httperror"
 )
 
 type UserFilmHandler struct {
@@ -24,19 +26,18 @@ func NewUserFilmHandler(
 }
 
 func (g *UserFilmHandler) GetAll(ctx *fiber.Ctx) error {
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("userClaims").(*token.Claims).UserID
 
 	films, err := g.userFilmService.GetAll(userId)
+
 	if err != nil {
-		logger.Error(err.Error())
-		ctx.Status(http.StatusInternalServerError)
-		return ctx.JSON(err)
+		return err
 	}
 	return ctx.JSON(films)
 }
 
 func (g *UserFilmHandler) Add(ctx *fiber.Ctx) error {
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("userClaims").(*token.Claims).UserID
 	filmId := ctx.Params("film_id")
 	isExist, err := g.filmService.GetOne(filmId)
 	if err != nil {
@@ -59,7 +60,7 @@ func (g *UserFilmHandler) Add(ctx *fiber.Ctx) error {
 }
 
 func (g *UserFilmHandler) Delete(ctx *fiber.Ctx) error {
-	userId := ctx.Params("user_id")
+	userId := ctx.Locals("userClaims").(*token.Claims).UserID
 	filmId := ctx.Params("film_id")
 	err := g.userFilmService.Delete(userId, filmId)
 	if err != nil {

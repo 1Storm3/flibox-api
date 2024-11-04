@@ -1,11 +1,13 @@
 package token
 
 import (
-	"github.com/golang-jwt/jwt"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+
+	"kbox-api/shared/httperror"
 )
 
 type Claims struct {
@@ -14,9 +16,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-var jwtKey = []byte("secret")
-
-func GenerateToken(userID, role string, duration time.Duration) (string, error) {
+func GenerateToken(jwtKey []byte, userID, role string, duration time.Duration) (string, error) {
 	expirationTime := time.Now().Add(duration)
 	claims := &Claims{
 		UserID: userID,
@@ -37,7 +37,7 @@ func GenerateToken(userID, role string, duration time.Duration) (string, error) 
 	return tokenString, nil
 }
 
-func ParseToken(tokenString string) (*Claims, error) {
+func ParseToken(tokenString string, jwtKey []byte) (*Claims, error) {
 	if strings.HasPrefix(tokenString, "Bearer ") {
 		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	}

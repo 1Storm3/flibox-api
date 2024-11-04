@@ -1,7 +1,10 @@
 package handler
 
-import filmservice "kinopoisk-api/internal/modules/film/service"
+import (
+	"kbox-api/internal/modules/film/dto"
+)
 
 type FilmSimilarService interface {
-	GetAll(filmId string) ([]filmservice.Film, error)
+	GetAll(filmId string) ([]dto.FilmResponseDTO, error)
+	FetchSimilar(filmId string) ([]dto.FilmResponseDTO, error)
 }

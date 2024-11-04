@@ -8,23 +8,23 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/modules/film/service"
-	"kinopoisk-api/shared/httperror"
+	"kbox-api/database/postgres"
+	"kbox-api/internal/model"
+	"kbox-api/shared/httperror"
 )
 
 type filmRepository struct {
 	storage *postgres.Storage
 }
 
-func (f *filmRepository) GetOne(ctx context.Context, filmId string) (service.Film, error) {
-	var film service.Film
+func (f *filmRepository) GetOne(ctx context.Context, filmId string) (model.Film, error) {
+	var film model.Film
 
 	result := f.storage.DB().WithContext(ctx).Where("id = ?", filmId).First(&film)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return service.Film{}, nil
+		return model.Film{}, nil
 	} else if result.Error != nil {
-		return service.Film{},
+		return model.Film{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error())
@@ -33,7 +33,7 @@ func (f *filmRepository) GetOne(ctx context.Context, filmId string) (service.Fil
 	return film, nil
 }
 
-func (f *filmRepository) Save(film service.Film) error {
+func (f *filmRepository) Save(film model.Film) error {
 	result := f.storage.DB().Create(&film)
 
 	if result.Error != nil {
@@ -50,8 +50,8 @@ func (f *filmRepository) Search(
 	match string,
 	genres []string,
 	limit, pageSize int,
-) ([]service.FilmSearch, int64, error) {
-	var films []service.FilmSearch
+) ([]model.Film, int64, error) {
+	var films []model.Film
 	var totalRecords int64
 
 	offset := (limit - 1) * pageSize

@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/modules/user/service"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
+	"strings"
+
+	"kbox-api/database/postgres"
+	"kbox-api/internal/model"
+	"kbox-api/internal/modules/user/dto"
+	"kbox-api/shared/httperror"
 )
 
 type userRepository struct {
@@ -20,8 +23,8 @@ func NewUserRepository(storage *postgres.Storage) *userRepository {
 	}
 }
 
-func (u *userRepository) GetOneByNickName(ctx context.Context, nickName string) (service.User, error) {
-	var user service.User
+func (u *userRepository) GetOneByNickName(ctx context.Context, nickName string) (model.User, error) {
+	var user model.User
 	result := u.storage.DB().WithContext(ctx).
 		Select("id",
 			"nick_name",
@@ -36,13 +39,13 @@ func (u *userRepository) GetOneByNickName(ctx context.Context, nickName string) 
 		Where("nick_name = ?", nickName).
 		First(&user)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return service.User{},
+		return model.User{},
 			httperror.New(
 				http.StatusNotFound,
 				"Пользователь не найден",
 			)
 	} else if result.Error != nil {
-		return service.User{},
+		return model.User{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error(),
@@ -51,8 +54,8 @@ func (u *userRepository) GetOneByNickName(ctx context.Context, nickName string) 
 	return user, nil
 }
 
-func (u *userRepository) GetOneById(ctx context.Context, id string) (service.User, error) {
-	var user service.User
+func (u *userRepository) GetOneById(ctx context.Context, id string) (model.User, error) {
+	var user model.User
 
 	result := u.storage.DB().WithContext(ctx).
 		Select("id",
@@ -69,13 +72,13 @@ func (u *userRepository) GetOneById(ctx context.Context, id string) (service.Use
 		First(&user)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return service.User{},
+		return model.User{},
 			httperror.New(
 				http.StatusNotFound,
 				"Пользователь не найден",
 			)
 	} else if result.Error != nil {
-		return service.User{},
+		return model.User{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error(),
@@ -85,14 +88,14 @@ func (u *userRepository) GetOneById(ctx context.Context, id string) (service.Use
 	return user, nil
 }
 
-func (u *userRepository) GetOneByEmail(ctx context.Context, email string) (service.User, error) {
-	var user service.User
+func (u *userRepository) GetOneByEmail(ctx context.Context, email string) (model.User, error) {
+	var user model.User
 
 	result := u.storage.DB().WithContext(ctx).Where("email = ?", email).First(&user)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return service.User{}, nil
+		return model.User{}, nil
 	} else if result.Error != nil {
-		return service.User{},
+		return model.User{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error(),
@@ -102,14 +105,38 @@ func (u *userRepository) GetOneByEmail(ctx context.Context, email string) (servi
 	return user, nil
 }
 
-func (u *userRepository) CreateUser(ctx context.Context, user service.User) (service.User, error) {
+func (u *userRepository) Create(ctx context.Context, user model.User) (model.User, error) {
 	result := u.storage.DB().WithContext(ctx).Create(&user)
 	if result.Error != nil {
-		return service.User{},
+		return model.User{},
 			httperror.New(
 				http.StatusInternalServerError,
 				result.Error.Error(),
 			)
 	}
+	return user, nil
+}
+
+func (u *userRepository) Update(ctx context.Context, userDTO dto.UpdateUserDTO) (model.User, error) {
+	tx := u.storage.DB().WithContext(ctx).Begin()
+
+	var user model.User
+	if err := tx.Where("id = ?", userDTO.Id).First(&user).Error; err != nil {
+		tx.Rollback()
+		return model.User{}, httperror.New(http.StatusNotFound, "Пользователь не найден")
+	}
+
+	if err := tx.Model(&user).Updates(userDTO).Error; err != nil {
+		tx.Rollback()
+		if strings.Contains(err.Error(), "duplicate key value") {
+			return model.User{}, httperror.New(
+				http.StatusConflict,
+				"Пользователь с таким никнеймом или почтой уже существует",
+			)
+		}
+		return model.User{}, httperror.New(http.StatusInternalServerError, err.Error())
+	}
+
+	tx.Commit()
 	return user, nil
 }

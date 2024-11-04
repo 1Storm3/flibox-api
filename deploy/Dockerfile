@@ -2,11 +2,11 @@ FROM golang:1.23.1-alpine AS build
 
 WORKDIR /app
 
-COPY go.mod go.sum internal ./
+COPY ../go.mod go.sum internal ./
 
 RUN go mod download
 
-COPY . .
+COPY .. .
 
 RUN go build -o main ./cmd/kbox-api/main.go
 

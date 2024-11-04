@@ -2,18 +2,20 @@ package config
 
 import (
 	"flag"
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 	"log"
 	"net"
 	"os"
 	"strconv"
+
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
 	Env string `env:"ENV" envDefault:"dev"`
 	DB  DBConfig
 	App AppConfig
+	S3  S3Config
 }
 
 type DBConfig struct {
@@ -22,8 +24,19 @@ type DBConfig struct {
 }
 
 type AppConfig struct {
-	Host string `env:"APP_HOST" envDefault:"localhost"`
-	Port int    `env:"APP_PORT" envDefault:"8080"`
+	Host         string `env:"APP_HOST" envDefault:"localhost"`
+	Port         int    `env:"APP_PORT" envDefault:"8080"`
+	JwtSecretKey string `env:"JWT_SECRET_KEY" env-required:"true"`
+	JwtExpiresIn string `env:"JWT_EXPIRES_IN" env-default:"24h"`
+}
+
+type S3Config struct {
+	Region    string `env:"S3_REGION" env-required:"true"`
+	Endpoint  string `env:"S3_ENDPOINT" env-required:"true"`
+	Bucket    string `env:"S3_BUCKET" env-required:"true"`
+	AccessKey string `env:"S3_ACCESS_KEY_ID" env-required:"true"`
+	SecretKey string `env:"S3_SECRET_ACCESS_KEY" env-required:"true"`
+	Domain    string `env:"S3_DOMAIN" env-required:"true"`
 }
 
 func (config *DBConfig) DSN() string {

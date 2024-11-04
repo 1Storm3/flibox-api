@@ -1,15 +1,15 @@
 package app
 
 import (
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/config"
-	"kinopoisk-api/internal/modules/auth"
-	"kinopoisk-api/internal/modules/external"
-	"kinopoisk-api/internal/modules/film"
-	"kinopoisk-api/internal/modules/film-sequel"
-	"kinopoisk-api/internal/modules/film-similar"
-	"kinopoisk-api/internal/modules/user"
-	"kinopoisk-api/internal/modules/user-film"
+	"kbox-api/database/postgres"
+	"kbox-api/internal/config"
+	"kbox-api/internal/modules/auth"
+	"kbox-api/internal/modules/external"
+	"kbox-api/internal/modules/film"
+	"kbox-api/internal/modules/film-sequel"
+	"kbox-api/internal/modules/film-similar"
+	"kbox-api/internal/modules/user"
+	"kbox-api/internal/modules/user-film"
 )
 
 type diContainer struct {
@@ -19,7 +19,7 @@ type diContainer struct {
 	filmModule        *film.Module
 	externalModule    *external.Module
 	userModule        *user.Module
-	filmSequelModule  *film_sequel.Module
+	filmSequelModule  *filmsequel.Module
 	filmSimilarModule *film_similar.Module
 	userFilmModule    *user_film.Module
 	authModule        *auth.Module
@@ -110,7 +110,7 @@ func (d *diContainer) UserModule() (*user.Module, error) {
 	return d.userModule, nil
 }
 
-func (d *diContainer) FilmSequelModule() (*film_sequel.Module, error) {
+func (d *diContainer) FilmSequelModule() (*filmsequel.Module, error) {
 	if d.filmSequelModule == nil {
 		storage, err := d.Storage()
 		if err != nil {
@@ -120,7 +120,7 @@ func (d *diContainer) FilmSequelModule() (*film_sequel.Module, error) {
 		if err != nil {
 			return nil, err
 		}
-		d.filmSequelModule = film_sequel.NewFilmSequelModule(storage, d.Config(), filmModule)
+		d.filmSequelModule = filmsequel.NewFilmSequelModule(storage, d.Config(), filmModule)
 	}
 	return d.filmSequelModule, nil
 }

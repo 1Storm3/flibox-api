@@ -1,16 +1,16 @@
 package user_film
 
 import (
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/modules/film"
-	"kinopoisk-api/internal/modules/user-film/handler"
-	userfilmrepository "kinopoisk-api/internal/modules/user-film/repository"
-	userfilmservice "kinopoisk-api/internal/modules/user-film/service"
+	"kbox-api/database/postgres"
+	"kbox-api/internal/modules/film"
+	"kbox-api/internal/modules/user-film/handler"
+	"kbox-api/internal/modules/user-film/repository"
+	"kbox-api/internal/modules/user-film/service"
 )
 
 type Module struct {
 	storage            *postgres.Storage
-	userFilmRepository userfilmservice.UserFilmRepository
+	userFilmRepository service.UserFilmRepository
 	userFilmService    handler.UserFilmService
 	userFilmHandler    *handler.UserFilmHandler
 	filmModule         *film.Module
@@ -32,14 +32,14 @@ func (u *Module) UserFilmService() (handler.UserFilmService, error) {
 		if err != nil {
 			return nil, err
 		}
-		u.userFilmService = userfilmservice.NewUserFilmService(repo)
+		u.userFilmService = service.NewUserFilmService(repo)
 	}
 	return u.userFilmService, nil
 }
 
-func (u *Module) UserFilmRepository() (userfilmservice.UserFilmRepository, error) {
+func (u *Module) UserFilmRepository() (service.UserFilmRepository, error) {
 	if u.userFilmRepository == nil {
-		u.userFilmRepository = userfilmrepository.NewUserFilmRepository(u.storage)
+		u.userFilmRepository = repository.NewUserFilmRepository(u.storage)
 	}
 	return u.userFilmRepository, nil
 }

@@ -1,18 +1,18 @@
-package film_sequel
+package filmsequel
 
 import (
-	"kinopoisk-api/database/postgres"
-	"kinopoisk-api/internal/config"
-	"kinopoisk-api/internal/modules/film"
-	"kinopoisk-api/internal/modules/film-sequel/handler"
-	filmsequelrepository "kinopoisk-api/internal/modules/film-sequel/repository"
-	filmsequelservice "kinopoisk-api/internal/modules/film-sequel/service"
+	"kbox-api/database/postgres"
+	"kbox-api/internal/config"
+	"kbox-api/internal/modules/film"
+	"kbox-api/internal/modules/film-sequel/handler"
+	"kbox-api/internal/modules/film-sequel/repository"
+	"kbox-api/internal/modules/film-sequel/service"
 )
 
 type Module struct {
 	storage              *postgres.Storage
 	config               *config.Config
-	filmSequelRepository filmsequelservice.FilmSequelRepository
+	filmSequelRepository service.FilmSequelRepository
 	filmSequelService    handler.FilmSequelService
 	filmModule           *film.Module
 	filmSequelHandler    *handler.FilmSequelHandler
@@ -40,14 +40,14 @@ func (f *Module) FilmSequelService() (handler.FilmSequelService, error) {
 		if err != nil {
 
 		}
-		f.filmSequelService = filmsequelservice.NewFilmsSequelService(repo, f.config, filmService)
+		f.filmSequelService = service.NewFilmsSequelService(repo, f.config, filmService)
 	}
 	return f.filmSequelService, nil
 }
 
-func (f *Module) FilmSequelRepository() (filmsequelservice.FilmSequelRepository, error) {
+func (f *Module) FilmSequelRepository() (service.FilmSequelRepository, error) {
 	if f.filmSequelRepository == nil {
-		f.filmSequelRepository = filmsequelrepository.NewFilmSequelRepository(f.storage)
+		f.filmSequelRepository = repository.NewFilmSequelRepository(f.storage)
 	}
 	return f.filmSequelRepository, nil
 }

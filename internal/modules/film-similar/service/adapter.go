@@ -1,8 +1,12 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	"kbox-api/internal/model"
+)
 
 type FilmSimilarRepository interface {
-	GetAll(ctx context.Context, filmId string) ([]FilmSimilar, error)
+	GetAll(ctx context.Context, filmId string) ([]model.FilmSimilar, error)
 	Save(filmId int, similarId int) error
 }

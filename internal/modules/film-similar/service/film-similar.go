@@ -5,30 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
 	"strconv"
 
-	"kinopoisk-api/internal/config"
-	"kinopoisk-api/internal/modules/film/service"
+	"kbox-api/internal/config"
+	"kbox-api/internal/modules/film-similar/dto"
+	dtoFilm "kbox-api/internal/modules/film/dto"
+	"kbox-api/internal/modules/film/handler"
+	"kbox-api/shared/httperror"
 )
-
-type ExternalSimilar struct {
-	FilmId       int     `json:"filmId"`
-	NameRu       *string `json:"nameRu"`
-	NameOriginal *string `json:"nameOriginal"`
-	PosterUrl    *string `json:"posterUrl"`
-}
-
-type FilmSimilar struct {
-	SimilarId int          `json:"similarId" gorm:"column:similar_id"`
-	FilmId    int          `json:"filmId" gorm:"column:film_id"`
-	Film      service.Film `gorm:"foreignKey:FilmId;references:ID"`
-}
 
 type FilmSimilarService struct {
 	filmSimilarRepo FilmSimilarRepository
-	filmService     service.FilmServiceI
+	filmService     handler.FilmService
 	config          *config.Config
 }
 
@@ -37,7 +26,7 @@ const baseUrlForAllSimilar = "https://kinopoiskapiunofficial.tech/api/v2.2/films
 func NewFilmsSimilarService(
 	filmSimilarRepo FilmSimilarRepository,
 	config *config.Config,
-	filmService service.FilmServiceI,
+	filmService handler.FilmService,
 ) *FilmSimilarService {
 	return &FilmSimilarService{
 		filmSimilarRepo: filmSimilarRepo,
@@ -46,20 +35,20 @@ func NewFilmsSimilarService(
 	}
 }
 
-func (s *FilmSimilarService) GetAll(filmId string) ([]service.Film, error) {
+func (s *FilmSimilarService) GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, error) {
 	result, err := s.filmSimilarRepo.GetAll(context.Background(), filmId)
 
 	if err != nil {
-		return []service.Film{}, err
+		return []dtoFilm.FilmResponseDTO{}, err
 	}
 
 	if len(result) > 0 {
-		var similars []service.Film
+		var similars []dtoFilm.FilmResponseDTO
 		for _, similar := range result {
 			res, err := s.filmService.GetOne(strconv.Itoa(similar.SimilarId))
 
 			if err != nil {
-				return []service.Film{}, err
+				return []dtoFilm.FilmResponseDTO{}, err
 			}
 			similars = append(similars, res)
 		}
@@ -67,18 +56,18 @@ func (s *FilmSimilarService) GetAll(filmId string) ([]service.Film, error) {
 	}
 	similars, err := s.FetchSimilar(filmId)
 	if err != nil {
-		return []service.Film{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
+		return []dtoFilm.FilmResponseDTO{}, fmt.Errorf("failed to fetch similar from Kinopoisk API: %w", err)
 	}
 	return similars, nil
 }
 
-func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error) {
+func (s *FilmSimilarService) FetchSimilar(filmId string) ([]dtoFilm.FilmResponseDTO, error) {
 	apikey := s.config.DB.ApiKey
 	baseUrlForAllSimilar := fmt.Sprintf(baseUrlForAllSimilar, filmId)
 	req, err := http.NewRequest("GET", baseUrlForAllSimilar, nil)
 
 	if err != nil {
-		return []service.Film{}, httperror.New(
+		return []dtoFilm.FilmResponseDTO{}, httperror.New(
 			http.StatusInternalServerError,
 			err.Error(),
 		)
@@ -90,7 +79,7 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	resAllSimilars, err := client.Do(req)
 
 	if err != nil {
-		return []service.Film{},
+		return []dtoFilm.FilmResponseDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
@@ -104,7 +93,7 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	}(resAllSimilars.Body)
 
 	if resAllSimilars.StatusCode != http.StatusOK {
-		return []service.Film{}, httperror.New(
+		return []dtoFilm.FilmResponseDTO{}, httperror.New(
 			http.StatusConflict,
 			"Код ответа Kinopoisk API: "+resAllSimilars.Status,
 		)
@@ -112,7 +101,7 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	bodyAllSimilars, err := io.ReadAll(resAllSimilars.Body)
 
 	if err != nil {
-		return []service.Film{},
+		return []dtoFilm.FilmResponseDTO{},
 			httperror.New(
 				http.StatusInternalServerError,
 				err.Error(),
@@ -120,19 +109,26 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]service.Film, error)
 	}
 
 	var apiResponse struct {
-		Total int               `json:"total"`
-		Items []ExternalSimilar `json:"items"`
+		Total int                         `json:"total"`
+		Items []dto.GetExternalSimilarDTO `json:"items"`
+	}
+
+	if apiResponse.Total == 0 || len(apiResponse.Items) == 0 {
+		return nil, httperror.New(
+			http.StatusNotFound,
+			"Похожие фильмы не найдены",
+		)
 	}
 
 	err = json.Unmarshal(bodyAllSimilars, &apiResponse)
-	var similars []service.Film
+	var similars []dtoFilm.FilmResponseDTO
 	for _, similar := range apiResponse.Items {
 		film, err := s.filmService.GetOne(strconv.Itoa(similar.FilmId))
 
 		filmIdInt, err := strconv.Atoi(filmId)
 
 		if err != nil {
-			return []service.Film{},
+			return []dtoFilm.FilmResponseDTO{},
 				httperror.New(
 					http.StatusInternalServerError,
 					err.Error(),

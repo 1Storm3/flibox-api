@@ -2,14 +2,17 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/pkg/token"
-	"kinopoisk-api/shared/httperror"
 	"net/http"
+
+	"github.com/gofiber/fiber/v2"
+
+	"kbox-api/pkg/token"
+	"kbox-api/shared/httperror"
 )
 
 func AuthMiddleware(c *fiber.Ctx) error {
 	tokenString := c.Get("Authorization")
+	jwtKey := c.Locals("jwtKey").(string)
 	if tokenString == "" {
 		return httperror.New(
 			http.StatusUnauthorized,
@@ -17,7 +20,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		)
 	}
 
-	claims, err := token.ParseToken(tokenString)
+	claims, err := token.ParseToken(tokenString, []byte(jwtKey))
 
 	if err != nil {
 		_ = fmt.Errorf("Ошибка при разборе токена: %w", err)

@@ -2,32 +2,37 @@ package rest
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/internal/delivery/middleware"
-	"kinopoisk-api/internal/modules/auth/handler"
-	"kinopoisk-api/internal/modules/auth/service"
-	filmsequelhandler "kinopoisk-api/internal/modules/film-sequel/handler"
-	filmsimilarhandler "kinopoisk-api/internal/modules/film-similar/handler"
-	filmhandler "kinopoisk-api/internal/modules/film/handler"
-	userfilmhandler "kinopoisk-api/internal/modules/user-film/handler"
-	userhandler "kinopoisk-api/internal/modules/user/handler"
+
+	"kbox-api/internal/delivery/middleware"
+	dtoAuth "kbox-api/internal/modules/auth/dto"
+	authHandler "kbox-api/internal/modules/auth/handler"
+	externalHandler "kbox-api/internal/modules/external/handler"
+	filmSequelHandler "kbox-api/internal/modules/film-sequel/handler"
+	filmSimilarHandler "kbox-api/internal/modules/film-similar/handler"
+	filmHandler "kbox-api/internal/modules/film/handler"
+	userFilmHandler "kbox-api/internal/modules/user-film/handler"
+	dtoUser "kbox-api/internal/modules/user/dto"
+	userHandler "kbox-api/internal/modules/user/handler"
 )
 
 type Router struct {
-	filmHandler        *filmhandler.FilmHandler
-	filmSequelHandler  *filmsequelhandler.FilmSequelHandler
-	filmSimilarHandler *filmsimilarhandler.FilmSimilarHandler
-	userHandler        *userhandler.UserHandler
-	userFilmHandler    *userfilmhandler.UserFilmHandler
-	authHandler        *handler.AuthHandler
+	filmHandler        *filmHandler.FilmHandler
+	filmSequelHandler  *filmSequelHandler.FilmSequelHandler
+	filmSimilarHandler *filmSimilarHandler.FilmSimilarHandler
+	userHandler        *userHandler.UserHandler
+	userFilmHandler    *userFilmHandler.UserFilmHandler
+	authHandler        *authHandler.AuthHandler
+	externalHandler    *externalHandler.ExternalHandler
 }
 
 func NewRouter(
-	filmHandler *filmhandler.FilmHandler,
-	filmSequelHandler *filmsequelhandler.FilmSequelHandler,
-	userHandler *userhandler.UserHandler,
-	filmSimilarHandler *filmsimilarhandler.FilmSimilarHandler,
-	userFilmHandler *userfilmhandler.UserFilmHandler,
-	authHandler *handler.AuthHandler,
+	filmHandler *filmHandler.FilmHandler,
+	filmSequelHandler *filmSequelHandler.FilmSequelHandler,
+	userHandler *userHandler.UserHandler,
+	filmSimilarHandler *filmSimilarHandler.FilmSimilarHandler,
+	userFilmHandler *userFilmHandler.UserFilmHandler,
+	authHandler *authHandler.AuthHandler,
+	externalHandler *externalHandler.ExternalHandler,
 ) *Router {
 	return &Router{
 		filmHandler:        filmHandler,
@@ -36,17 +41,24 @@ func NewRouter(
 		filmSimilarHandler: filmSimilarHandler,
 		userFilmHandler:    userFilmHandler,
 		authHandler:        authHandler,
+		externalHandler:    externalHandler,
 	}
 }
 
 func (r *Router) LoadRoutes(app fiber.Router) {
 	authRoute := app.Group("api/auth")
-	authRoute.Post("login", middleware.ValidateMiddleware[handler.RequestLogin](), r.authHandler.Login)
-	authRoute.Post("register", middleware.ValidateMiddleware[service.RequestUser](), r.authHandler.Register)
+	authRoute.Post("login", middleware.ValidateMiddleware[dtoAuth.LoginDTO](), r.authHandler.Login)
+	authRoute.Post("register", middleware.ValidateMiddleware[dtoUser.CreateUserDTO](), r.authHandler.Register)
 	authRoute.Put("me", middleware.AuthMiddleware, r.authHandler.Me)
+
+	userFilmRoute := app.Group("api/user/favourites")
+	userFilmRoute.Get("", middleware.AuthMiddleware, r.userFilmHandler.GetAll)
+	userFilmRoute.Post(":film_id", middleware.AuthMiddleware, r.userFilmHandler.Add)
+	userFilmRoute.Delete(":film_id", middleware.AuthMiddleware, r.userFilmHandler.Delete)
 
 	userRoute := app.Group("api/user")
 	userRoute.Get(":nickName", middleware.AuthMiddleware, r.userHandler.GetOneByNickName)
+	userRoute.Patch(":id", middleware.AuthMiddleware, r.userHandler.Update)
 
 	filmRoute := app.Group("api/film")
 	filmRoute.Get(":id", middleware.AuthMiddleware, r.filmHandler.GetOneByID)
@@ -58,8 +70,6 @@ func (r *Router) LoadRoutes(app fiber.Router) {
 	similarRoute := app.Group("api/similar")
 	similarRoute.Get(":id", middleware.AuthMiddleware, r.filmSimilarHandler.GetAll)
 
-	userFilmRoute := app.Group("api/user/:user_id/films")
-	userFilmRoute.Get("", middleware.AuthMiddleware, r.userFilmHandler.GetAll)
-	userFilmRoute.Post(":film_id", middleware.AuthMiddleware, r.userFilmHandler.Add)
-	userFilmRoute.Delete(":film_id", middleware.AuthMiddleware, r.userFilmHandler.Delete)
+	externalRoute := app.Group("api/upload")
+	externalRoute.Put("", middleware.AuthMiddleware, r.externalHandler.UploadFile)
 }

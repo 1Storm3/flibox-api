@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+
 	"go.uber.org/zap"
-	"kinopoisk-api/internal/app"
-	"kinopoisk-api/shared/logger"
+
+	_ "kbox-api/docs"
+	"kbox-api/internal/app"
+	"kbox-api/shared/logger"
 )
 
 // @title Swagger Kbox API
 // @version 1.0
-// @description Kbox API
-
-// @host petstore.swagger.io
+// @description Kbox API BFF
+// @host localhost:8080
 // @BasePath /api
 func main() {
 

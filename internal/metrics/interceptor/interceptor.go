@@ -2,7 +2,8 @@ package interceptor
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"kinopoisk-api/internal/metrics"
+
+	"kbox-api/internal/metrics"
 )
 
 func MetricsInterceptor() fiber.Handler {

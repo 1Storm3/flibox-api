@@ -5,9 +5,16 @@ import (
 	"fmt"
 )
 
+// Error представляет структуру ошибки
+// @swagger:model
 type Error struct {
-	code    int
-	message string
+	// Код ошибки
+	// example: 400
+	code int `json:"code"`
+
+	// Сообщение ошибки
+	// example: Invalid request parameters
+	message string `json:"message"`
 }
 
 func New(code int, message string) error {
