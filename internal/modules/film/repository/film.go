@@ -13,14 +13,26 @@ import (
 	"kbox-api/shared/httperror"
 )
 
+type FilmRepositoryInterface interface {
+	GetOne(ctx context.Context, filmId string) (model.Film, error)
+	Save(film model.Film) error
+	Search(match string, genres []string, page, pageSize int) ([]model.Film, int64, error)
+}
+
 type filmRepository struct {
 	storage *postgres.Storage
 }
 
-func (f *filmRepository) GetOne(ctx context.Context, filmId string) (model.Film, error) {
+func NewFilmRepository(storage *postgres.Storage) FilmRepositoryInterface {
+	return &filmRepository{
+		storage: storage,
+	}
+}
+
+func (f *filmRepository) GetOne(ctx context.Context, filmID string) (model.Film, error) {
 	var film model.Film
 
-	result := f.storage.DB().WithContext(ctx).Where("id = ?", filmId).First(&film)
+	result := f.storage.DB().WithContext(ctx).Where("id = ?", filmID).First(&film)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return model.Film{}, nil
 	} else if result.Error != nil {
@@ -85,10 +97,4 @@ func (f *filmRepository) Search(
 	}
 
 	return films, totalRecords, nil
-}
-
-func NewFilmRepository(storage *postgres.Storage) *filmRepository {
-	return &filmRepository{
-		storage: storage,
-	}
 }

@@ -10,28 +10,34 @@ import (
 
 	"kbox-api/internal/config"
 	"kbox-api/internal/modules/film-similar/dto"
+	"kbox-api/internal/modules/film-similar/repository"
 	dtoFilm "kbox-api/internal/modules/film/dto"
-	"kbox-api/internal/modules/film/handler"
+	"kbox-api/internal/modules/film/service"
 	"kbox-api/shared/httperror"
 )
 
+type FilmSimilarServiceInterface interface {
+	GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, error)
+	FetchSimilar(filmId string) ([]dtoFilm.FilmResponseDTO, error)
+}
+
 type FilmSimilarService struct {
-	filmSimilarRepo FilmSimilarRepository
-	filmService     handler.FilmService
-	config          *config.Config
+	filmSimilarRepo repository.FilmSimilarRepositoryInterface
+	filmService     service.FilmServiceInterface
+	cfg             *config.Config
 }
 
 const baseUrlForAllSimilar = "https://kinopoiskapiunofficial.tech/api/v2.2/films/%s/similars"
 
 func NewFilmsSimilarService(
-	filmSimilarRepo FilmSimilarRepository,
-	config *config.Config,
-	filmService handler.FilmService,
-) *FilmSimilarService {
+	filmSimilarRepo repository.FilmSimilarRepositoryInterface,
+	cfg *config.Config,
+	filmService service.FilmServiceInterface,
+) FilmSimilarServiceInterface {
 	return &FilmSimilarService{
 		filmSimilarRepo: filmSimilarRepo,
 		filmService:     filmService,
-		config:          config,
+		cfg:             cfg,
 	}
 }
 
@@ -45,7 +51,7 @@ func (s *FilmSimilarService) GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, e
 	if len(result) > 0 {
 		var similars []dtoFilm.FilmResponseDTO
 		for _, similar := range result {
-			res, err := s.filmService.GetOne(strconv.Itoa(similar.SimilarId))
+			res, err := s.filmService.GetOne(strconv.Itoa(similar.SimilarID))
 
 			if err != nil {
 				return []dtoFilm.FilmResponseDTO{}, err
@@ -62,7 +68,7 @@ func (s *FilmSimilarService) GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, e
 }
 
 func (s *FilmSimilarService) FetchSimilar(filmId string) ([]dtoFilm.FilmResponseDTO, error) {
-	apikey := s.config.DB.ApiKey
+	apikey := s.cfg.DB.ApiKey
 	baseUrlForAllSimilar := fmt.Sprintf(baseUrlForAllSimilar, filmId)
 	req, err := http.NewRequest("GET", baseUrlForAllSimilar, nil)
 
@@ -121,6 +127,14 @@ func (s *FilmSimilarService) FetchSimilar(filmId string) ([]dtoFilm.FilmResponse
 	}
 
 	err = json.Unmarshal(bodyAllSimilars, &apiResponse)
+
+	if err != nil {
+		return []dtoFilm.FilmResponseDTO{},
+			httperror.New(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+	}
 	var similars []dtoFilm.FilmResponseDTO
 	for _, similar := range apiResponse.Items {
 		film, err := s.filmService.GetOne(strconv.Itoa(similar.FilmId))

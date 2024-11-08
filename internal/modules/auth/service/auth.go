@@ -9,40 +9,46 @@ import (
 	"kbox-api/internal/config"
 	"kbox-api/internal/model"
 	"kbox-api/internal/modules/auth/dto"
-	"kbox-api/internal/modules/user/handler"
+	"kbox-api/internal/modules/user/service"
 	"kbox-api/pkg/token"
 	"kbox-api/shared/httperror"
 )
 
-type AuthService struct {
-	userService handler.UserService
-	config      *config.Config
+type AuthServiceInterface interface {
+	Login(dto dto.LoginDTO) (string, error)
+	Register(user dto.RegisterDTO) (string, error)
+	Me(c *fiber.Ctx) (model.User, error)
 }
 
-func NewAuthService(userService handler.UserService, config *config.Config) *AuthService {
+type AuthService struct {
+	userService service.UserServiceInterface
+	cfg         *config.Config
+}
+
+func NewAuthService(userService service.UserServiceInterface, cfg *config.Config) *AuthService {
 	return &AuthService{
 		userService: userService,
-		config:      config,
+		cfg:         cfg,
 	}
 }
 
-func (s *AuthService) Login(dto dto.LoginDTO) (string, error) {
-	user, err := s.userService.GetOneByEmail(dto.Email)
-	if err != nil || !s.userService.CheckPassword(user, dto.Password) {
+func (s *AuthService) Login(req dto.LoginDTO) (string, error) {
+	user, err := s.userService.GetOneByEmail(req.Email)
+	if err != nil || !s.userService.CheckPassword(user, req.Password) {
 		return "", httperror.New(
 			http.StatusUnauthorized,
 			"Неверный логин или пароль",
 		)
 	}
-	jwtKey := []byte(s.config.App.JwtSecretKey)
-	expiresIn, err := time.ParseDuration(s.config.App.JwtExpiresIn)
+	jwtKey := []byte(s.cfg.App.JwtSecretKey)
+	expiresIn, err := time.ParseDuration(s.cfg.App.JwtExpiresIn)
 	if err != nil {
 		return "", httperror.New(
 			http.StatusInternalServerError,
 			err.Error(),
 		)
 	}
-	tokenString, err := token.GenerateToken(jwtKey, user.Id, user.Role, expiresIn)
+	tokenString, err := token.GenerateToken(jwtKey, user.ID, user.Role, expiresIn)
 	if err != nil {
 		return "", httperror.New(
 			http.StatusInternalServerError, err.Error(),
@@ -51,22 +57,22 @@ func (s *AuthService) Login(dto dto.LoginDTO) (string, error) {
 	return tokenString, nil
 }
 
-func (s *AuthService) Register(user dto.RegisterDTO) (string, error) {
-	existingUser, err := s.userService.GetOneByEmail(user.Email)
-	if err == nil && existingUser.Id != "" {
+func (s *AuthService) Register(req dto.RegisterDTO) (string, error) {
+	existingUser, err := s.userService.GetOneByEmail(req.Email)
+	if err == nil && existingUser.ID != "" {
 		return "", httperror.New(
 			http.StatusConflict,
 			"Пользователь с таким email уже зарегистрирован",
 		)
 	}
-	existingUser, err = s.userService.GetOneByNickName(user.NickName)
-	if err == nil && existingUser.Id != "" {
+	existingUser, err = s.userService.GetOneByNickName(req.NickName)
+	if err == nil && existingUser.ID != "" {
 		return "", httperror.New(
 			http.StatusConflict,
 			"Пользователь с таким ником уже зарегистрирован",
 		)
 	}
-	hashedPassword, err := s.userService.HashPassword(user.Password)
+	hashedPassword, err := s.userService.HashPassword(req.Password)
 	if err != nil {
 		return "", httperror.New(
 			http.StatusInternalServerError,
@@ -75,11 +81,11 @@ func (s *AuthService) Register(user dto.RegisterDTO) (string, error) {
 	}
 
 	newUser := model.User{
-		NickName:   user.NickName,
-		Name:       user.Name,
-		Email:      user.Email,
+		NickName:   req.NickName,
+		Name:       req.Name,
+		Email:      req.Email,
 		Password:   hashedPassword,
-		Photo:      user.Photo,
+		Photo:      req.Photo,
 		Role:       "user",
 		IsVerified: false,
 		CreatedAt:  time.Now(),
@@ -94,9 +100,9 @@ func (s *AuthService) Register(user dto.RegisterDTO) (string, error) {
 		)
 	}
 
-	jwtKey := []byte(s.config.App.JwtSecretKey)
+	jwtKey := []byte(s.cfg.App.JwtSecretKey)
 
-	tokenString, err := token.GenerateToken(jwtKey, createdUser.Id, createdUser.Role, 24*time.Hour)
+	tokenString, err := token.GenerateToken(jwtKey, createdUser.ID, createdUser.Role, 24*time.Hour)
 	if err != nil {
 		return "", httperror.New(
 			http.StatusInternalServerError,

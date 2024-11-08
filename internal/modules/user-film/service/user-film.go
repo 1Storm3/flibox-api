@@ -2,18 +2,28 @@ package service
 
 import (
 	"context"
+
 	"net/http"
 
 	"kbox-api/internal/modules/user-film/dto"
 	"kbox-api/internal/modules/user-film/mapper"
+	"kbox-api/internal/modules/user-film/repository"
 	"kbox-api/shared/httperror"
 )
 
-type UserFilmService struct {
-	userFilmRepo UserFilmRepository
+var _ UserFilmServiceInterface = (*UserFilmService)(nil)
+
+type UserFilmServiceInterface interface {
+	GetAll(userId string) ([]dto.GetUserFilmResponseDTO, error)
+	Add(userId string, filmId string) error
+	Delete(userId string, filmId string) error
 }
 
-func NewUserFilmService(userFilmRepo UserFilmRepository) *UserFilmService {
+type UserFilmService struct {
+	userFilmRepo repository.UserFilmRepositoryInterface
+}
+
+func NewUserFilmService(userFilmRepo repository.UserFilmRepositoryInterface) UserFilmServiceInterface {
 	return &UserFilmService{
 		userFilmRepo: userFilmRepo,
 	}

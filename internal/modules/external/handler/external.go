@@ -2,19 +2,28 @@ package handler
 
 import (
 	"io"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 
+	"kbox-api/internal/modules/external/service"
 	"kbox-api/shared/httperror"
 )
 
-type ExternalHandler struct {
-	ExternalService ExternalService
-	S3Service       S3Service
+type ExternalHandlerInterface interface {
+	UploadFile(ctx *fiber.Ctx) error
 }
 
-func NewExternalHandler(externalService ExternalService, s3Service S3Service) *ExternalHandler {
+type ExternalHandler struct {
+	ExternalService service.ExternalServiceInterface
+	S3Service       service.S3ServiceInterface
+}
+
+func NewExternalHandler(
+	externalService service.ExternalServiceInterface,
+	s3Service service.S3ServiceInterface,
+) ExternalHandlerInterface {
 	return &ExternalHandler{
 		ExternalService: externalService,
 		S3Service:       s3Service,
@@ -22,6 +31,7 @@ func NewExternalHandler(externalService ExternalService, s3Service S3Service) *E
 }
 
 func (e *ExternalHandler) UploadFile(ctx *fiber.Ctx) error {
+
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		return httperror.New(
@@ -29,7 +39,6 @@ func (e *ExternalHandler) UploadFile(ctx *fiber.Ctx) error {
 			"Не удалось получить данные",
 		)
 	}
-
 	fileReader, err := file.Open()
 	if err != nil {
 		return httperror.New(
@@ -37,7 +46,12 @@ func (e *ExternalHandler) UploadFile(ctx *fiber.Ctx) error {
 			"Не удалось получить данные",
 		)
 	}
-	defer fileReader.Close()
+	defer func(fileReader multipart.File) {
+		err := fileReader.Close()
+		if err != nil {
+			return
+		}
+	}(fileReader)
 
 	fileBytes, err := io.ReadAll(fileReader)
 	if err != nil {
@@ -46,7 +60,6 @@ func (e *ExternalHandler) UploadFile(ctx *fiber.Ctx) error {
 			"Не удалось прочитать файл",
 		)
 	}
-
 	url, err := e.S3Service.UploadFile(ctx.Context(), file.Filename, fileBytes)
 	if err != nil {
 		return err

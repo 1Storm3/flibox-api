@@ -2,15 +2,21 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
+
+	"kbox-api/internal/modules/film-similar/service"
 )
 
+type FilmSimilarHandlerInterface interface {
+	GetAll(ctx *fiber.Ctx) error
+}
+
 type FilmSimilarHandler struct {
-	filmSimilarService FilmSimilarService
+	filmSimilarService service.FilmSimilarServiceInterface
 }
 
 func NewFilmSimilarHandler(
-	filmSimilarService FilmSimilarService,
-) *FilmSimilarHandler {
+	filmSimilarService service.FilmSimilarServiceInterface,
+) FilmSimilarHandlerInterface {
 	return &FilmSimilarHandler{
 		filmSimilarService: filmSimilarService,
 	}

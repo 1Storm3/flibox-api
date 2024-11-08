@@ -12,22 +12,27 @@ import (
 	"kbox-api/shared/httperror"
 )
 
+type FilmSimilarRepositoryInterface interface {
+	GetAll(ctx context.Context, filmId string) ([]model.FilmSimilar, error)
+	Save(filmId int, similarId int) error
+}
+
 type filmSimilarRepository struct {
 	storage *postgres.Storage
 }
 
-func NewFilmSimilarRepository(storage *postgres.Storage) *filmSimilarRepository {
+func NewFilmSimilarRepository(storage *postgres.Storage) FilmSimilarRepositoryInterface {
 	return &filmSimilarRepository{
 		storage: storage,
 	}
 }
 
-func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]model.FilmSimilar, error) {
+func (s *filmSimilarRepository) GetAll(ctx context.Context, filmID string) ([]model.FilmSimilar, error) {
 	var filmSimilars []model.FilmSimilar
 
 	result := s.storage.DB().
 		WithContext(ctx).
-		Where("film_id = ?", filmId).
+		Where("film_id = ?", filmID).
 		Preload("Film").
 		Find(&filmSimilars)
 
@@ -43,10 +48,10 @@ func (s *filmSimilarRepository) GetAll(ctx context.Context, filmId string) ([]mo
 	return filmSimilars, nil
 }
 
-func (s *filmSimilarRepository) Save(filmId int, similarId int) error {
+func (s *filmSimilarRepository) Save(filmID int, similarID int) error {
 	var existingSimilar model.FilmSimilar
 
-	result := s.storage.DB().Where("film_id = ? AND similar_id = ?", filmId, similarId).First(&existingSimilar)
+	result := s.storage.DB().Where("film_id = ? AND similar_id = ?", filmID, similarID).First(&existingSimilar)
 
 	if result.Error == nil {
 		return nil
@@ -59,8 +64,8 @@ func (s *filmSimilarRepository) Save(filmId int, similarId int) error {
 	}
 
 	createdResult := s.storage.DB().Create(&model.FilmSimilar{
-		FilmId:    filmId,
-		SimilarId: similarId,
+		FilmID:    filmID,
+		SimilarID: similarID,
 	})
 
 	if createdResult.Error != nil {

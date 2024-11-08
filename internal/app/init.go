@@ -80,6 +80,14 @@ func (a *App) initModulesAndHandlers() error {
 	if err != nil {
 		return err
 	}
+	commentModule, err := a.diContainer.CommentModule()
+	if err != nil {
+		return err
+	}
+	commentHandler, err := commentModule.CommentHandler()
+	if err != nil {
+		return err
+	}
 
 	router := rest.NewRouter(
 		filmHandler,
@@ -89,6 +97,7 @@ func (a *App) initModulesAndHandlers() error {
 		userFilmHandler,
 		authHandler,
 		externalHandler,
+		commentHandler,
 	)
 	router.LoadRoutes(a.httpServer)
 

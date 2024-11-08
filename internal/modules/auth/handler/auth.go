@@ -7,14 +7,21 @@ import (
 
 	"kbox-api/internal/modules/auth/dto"
 	"kbox-api/internal/modules/auth/mapper"
+	"kbox-api/internal/modules/auth/service"
 	"kbox-api/shared/httperror"
 )
 
-type AuthHandler struct {
-	authService AuthService
+type AuthHandlerInterface interface {
+	Login(ctx *fiber.Ctx) error
+	Register(c *fiber.Ctx) error
+	Me(c *fiber.Ctx) error
 }
 
-func NewAuthHandler(authService AuthService) *AuthHandler {
+type AuthHandler struct {
+	authService service.AuthServiceInterface
+}
+
+func NewAuthHandler(authService service.AuthServiceInterface) AuthHandlerInterface {
 	return &AuthHandler{
 		authService: authService,
 	}
@@ -28,9 +35,9 @@ func NewAuthHandler(authService AuthService) *AuthHandler {
 // @Success 200 token string
 // @Failure 400 {object} httperror.Error
 // @Router /auth/login [post]
-func (a *AuthHandler) Login(c *fiber.Ctx) error {
+func (a *AuthHandler) Login(ctx *fiber.Ctx) error {
 	var loginData dto.LoginDTO
-	if err := c.BodyParser(&loginData); err != nil {
+	if err := ctx.BodyParser(&loginData); err != nil {
 
 		return httperror.New(
 			http.StatusBadRequest,
@@ -42,7 +49,7 @@ func (a *AuthHandler) Login(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(fiber.Map{
+	return ctx.JSON(fiber.Map{
 		"token": token,
 	})
 }

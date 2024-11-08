@@ -2,15 +2,21 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
+
+	"kbox-api/internal/modules/film-sequel/service"
 )
 
+type FilmSequelHandlerInterface interface {
+	GetAll(ctx *fiber.Ctx) error
+}
+
 type FilmSequelHandler struct {
-	filmSequelService FilmSequelService
+	filmSequelService service.FilmSequelServiceInterface
 }
 
 func NewFilmSequelHandler(
-	filmSequelService FilmSequelService,
-) *FilmSequelHandler {
+	filmSequelService service.FilmSequelServiceInterface,
+) FilmSequelHandlerInterface {
 	return &FilmSequelHandler{
 		filmSequelService: filmSequelService,
 	}

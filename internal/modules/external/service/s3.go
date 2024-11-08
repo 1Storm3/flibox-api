@@ -16,17 +16,22 @@ import (
 	"kbox-api/shared/httperror"
 )
 
-type S3Service struct {
-	client    *s3.Client
-	appConfig *appConfig.Config
+type S3ServiceInterface interface {
+	UploadFile(ctx context.Context, key string, file []byte) (string, error)
+	DeleteFile(ctx context.Context, key string) error
 }
 
-func NewS3Service(appConfig *appConfig.Config) (*S3Service, error) {
+type S3Service struct {
+	client *s3.Client
+	appCfg *appConfig.Config
+}
+
+func NewS3Service(appCfg *appConfig.Config) (*S3Service, error) {
 	awsConfig, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(appConfig.S3.Region),
+		config.WithRegion(appCfg.S3.Region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			appConfig.S3.AccessKey,
-			appConfig.S3.SecretKey,
+			appCfg.S3.AccessKey,
+			appCfg.S3.SecretKey,
 			"",
 		)),
 	)
@@ -38,12 +43,12 @@ func NewS3Service(appConfig *appConfig.Config) (*S3Service, error) {
 	}
 
 	client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String(appConfig.S3.Endpoint)
+		o.BaseEndpoint = aws.String(appCfg.S3.Endpoint)
 		o.UsePathStyle = true
 	})
 
 	_, err = client.HeadBucket(context.TODO(), &s3.HeadBucketInput{
-		Bucket: aws.String(appConfig.S3.Bucket),
+		Bucket: aws.String(appCfg.S3.Bucket),
 	})
 	if err != nil {
 		return nil, httperror.New(
@@ -52,7 +57,7 @@ func NewS3Service(appConfig *appConfig.Config) (*S3Service, error) {
 		)
 	}
 
-	return &S3Service{client: client, appConfig: appConfig}, nil
+	return &S3Service{client: client, appCfg: appCfg}, nil
 }
 
 func (s *S3Service) UploadFile(ctx context.Context, key string, file []byte) (string, error) {
@@ -61,7 +66,7 @@ func (s *S3Service) UploadFile(ctx context.Context, key string, file []byte) (st
 	}
 
 	input := &s3.PutObjectInput{
-		Bucket:      aws.String(s.appConfig.S3.Bucket),
+		Bucket:      aws.String(s.appCfg.S3.Bucket),
 		Key:         aws.String(key),
 		Body:        bytes.NewReader(file),
 		ContentType: aws.String("image/jpeg"),
@@ -76,6 +81,24 @@ func (s *S3Service) UploadFile(ctx context.Context, key string, file []byte) (st
 		)
 	}
 
-	url := fmt.Sprintf("%s/%s", s.appConfig.S3.Domain, key)
+	url := fmt.Sprintf("%s/%s", s.appCfg.S3.Domain, key)
 	return url, nil
+}
+
+func (s *S3Service) DeleteFile(ctx context.Context, key string) error {
+	if s.client == nil {
+		return httperror.New(http.StatusInternalServerError, "S3 не инициализирован")
+	}
+
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.appCfg.S3.Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return httperror.New(
+			http.StatusInternalServerError,
+			"Не удалось удалить файл: "+err.Error(),
+		)
+	}
+	return nil
 }

@@ -13,18 +13,22 @@ import (
 
 const baseUrlForAllFilms = "https://kinopoiskapiunofficial.tech/api/v2.2/films/"
 
-type ExternalService struct {
-	config *config.Config
+type ExternalServiceInterface interface {
+	SetExternalRequest(filmId string) (dto.GetExternalFilmDTO, error)
 }
 
-func NewExternalService(config *config.Config) *ExternalService {
+type ExternalService struct {
+	cfg *config.Config
+}
+
+func NewExternalService(cfg *config.Config) *ExternalService {
 	return &ExternalService{
-		config: config,
+		cfg: cfg,
 	}
 }
 
 func (e *ExternalService) SetExternalRequest(filmId string) (dto.GetExternalFilmDTO, error) {
-	apiKey := e.config.DB.ApiKey
+	apiKey := e.cfg.DB.ApiKey
 	urlAllFilms := fmt.Sprintf("%s%s", baseUrlForAllFilms, filmId)
 	req, err := http.NewRequest("GET", urlAllFilms, nil)
 	if err != nil {

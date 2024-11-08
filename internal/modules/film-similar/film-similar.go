@@ -1,4 +1,4 @@
-package film_similar
+package filmsimilar
 
 import (
 	"kbox-api/database/postgres"
@@ -9,20 +9,26 @@ import (
 	"kbox-api/internal/modules/film-similar/service"
 )
 
+type ModuleInterface interface {
+	FilmSimilarService() (service.FilmSimilarServiceInterface, error)
+	FilmSimilarRepository() (repository.FilmSimilarRepositoryInterface, error)
+	FilmSimilarHandler() (handler.FilmSimilarHandlerInterface, error)
+}
+
 type Module struct {
 	storage               *postgres.Storage
 	config                *config.Config
-	filmSimilarRepository service.FilmSimilarRepository
-	filmSimilarService    handler.FilmSimilarService
-	filmSimilarHandler    *handler.FilmSimilarHandler
-	filmModule            *film.Module
+	filmSimilarRepository repository.FilmSimilarRepositoryInterface
+	filmSimilarService    service.FilmSimilarServiceInterface
+	filmSimilarHandler    handler.FilmSimilarHandlerInterface
+	filmModule            film.ModuleInterface
 }
 
 func NewFilmSimilarModule(
 	storage *postgres.Storage,
 	config *config.Config,
-	filmModule *film.Module,
-) *Module {
+	filmModule film.ModuleInterface,
+) ModuleInterface {
 	return &Module{
 		storage:    storage,
 		config:     config,
@@ -30,7 +36,7 @@ func NewFilmSimilarModule(
 	}
 }
 
-func (f *Module) FilmSimilarService() (handler.FilmSimilarService, error) {
+func (f *Module) FilmSimilarService() (service.FilmSimilarServiceInterface, error) {
 	if f.filmSimilarService == nil {
 		repo, err := f.FilmSimilarRepository()
 		if err != nil {
@@ -45,14 +51,14 @@ func (f *Module) FilmSimilarService() (handler.FilmSimilarService, error) {
 	return f.filmSimilarService, nil
 }
 
-func (f *Module) FilmSimilarRepository() (service.FilmSimilarRepository, error) {
+func (f *Module) FilmSimilarRepository() (repository.FilmSimilarRepositoryInterface, error) {
 	if f.filmSimilarRepository == nil {
 		f.filmSimilarRepository = repository.NewFilmSimilarRepository(f.storage)
 	}
 	return f.filmSimilarRepository, nil
 }
 
-func (f *Module) FilmSimilarHandler() (*handler.FilmSimilarHandler, error) {
+func (f *Module) FilmSimilarHandler() (handler.FilmSimilarHandlerInterface, error) {
 	if f.filmSimilarHandler == nil {
 		filmSimilarService, err := f.FilmSimilarService()
 		if err != nil {

@@ -13,11 +13,19 @@ import (
 	"kbox-api/shared/httperror"
 )
 
+var _ UserFilmRepositoryInterface = (*userFilmRepository)(nil)
+
+type UserFilmRepositoryInterface interface {
+	GetAll(ctx context.Context, userId string) ([]model.UserFilm, error)
+	Add(ctx context.Context, userId string, filmId string) error
+	Delete(ctx context.Context, userId string, filmId string) error
+}
+
 type userFilmRepository struct {
 	storage *postgres.Storage
 }
 
-func NewUserFilmRepository(storage *postgres.Storage) *userFilmRepository {
+func NewUserFilmRepository(storage *postgres.Storage) UserFilmRepositoryInterface {
 	return &userFilmRepository{
 		storage: storage,
 	}
@@ -47,8 +55,8 @@ func (u *userFilmRepository) GetAll(ctx context.Context, userId string) ([]model
 	return userFilms, nil
 }
 
-func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId string) error {
-	filmIdInt, err := strconv.Atoi(filmId)
+func (u *userFilmRepository) Add(ctx context.Context, userID string, filmID string) error {
+	filmIDInt, err := strconv.Atoi(filmID)
 	if err != nil {
 		return httperror.New(
 			http.StatusBadRequest,
@@ -56,7 +64,7 @@ func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId stri
 		)
 	}
 
-	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userId, filmIdInt).Find(&model.UserFilm{})
+	isFavourite := u.storage.DB().WithContext(ctx).Where("user_id = ? AND film_id = ?", userID, filmIDInt).Find(&model.UserFilm{})
 	if isFavourite.RowsAffected > 0 {
 		return httperror.New(
 			http.StatusConflict,
@@ -64,8 +72,8 @@ func (u *userFilmRepository) Add(ctx context.Context, userId string, filmId stri
 		)
 	}
 	result := u.storage.DB().WithContext(ctx).Create(&model.UserFilm{
-		UserId: userId,
-		FilmId: filmIdInt,
+		UserID: userID,
+		FilmID: filmIDInt,
 	})
 	if result.Error != nil {
 		return httperror.New(

@@ -7,8 +7,8 @@ import (
 
 func MapDomainUserFilmToResponseDTO(userFilm model.UserFilm) dto.GetUserFilmResponseDTO {
 	return dto.GetUserFilmResponseDTO{
-		UserId: userFilm.UserId,
-		FilmId: userFilm.FilmId,
+		UserID: userFilm.UserID,
+		FilmID: userFilm.FilmID,
 		Film:   userFilm.Film,
 	}
 }

@@ -4,15 +4,20 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"kbox-api/internal/modules/film/service"
 )
 
+type FilmHandlerInterface interface {
+	Search(ctx *fiber.Ctx) error
+	GetOneByID(ctx *fiber.Ctx) error
+}
 type FilmHandler struct {
-	filmService FilmService
+	filmService service.FilmServiceInterface
 }
 
 func NewFilmHandler(
-	filmService FilmService,
-) *FilmHandler {
+	filmService service.FilmServiceInterface,
+) FilmHandlerInterface {
 	return &FilmHandler{
 		filmService: filmService,
 	}

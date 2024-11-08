@@ -12,21 +12,26 @@ import (
 	"kbox-api/shared/httperror"
 )
 
+type FilmSequelRepositoryInterface interface {
+	GetAll(ctx context.Context, filmId string) ([]model.FilmSequel, error)
+	Save(filmId int, sequelId int) error
+}
+
 type filmSequelRepository struct {
 	storage *postgres.Storage
 }
 
-func NewFilmSequelRepository(storage *postgres.Storage) *filmSequelRepository {
+func NewFilmSequelRepository(storage *postgres.Storage) FilmSequelRepositoryInterface {
 	return &filmSequelRepository{
 		storage: storage,
 	}
 }
 
-func (s *filmSequelRepository) GetAll(ctx context.Context, filmId string) ([]model.FilmSequel, error) {
+func (s *filmSequelRepository) GetAll(ctx context.Context, filmID string) ([]model.FilmSequel, error) {
 	var filmSequels []model.FilmSequel
 	result := s.storage.DB().
 		WithContext(ctx).
-		Where("film_id = ?", filmId).
+		Where("film_id = ?", filmID).
 		Preload("Film").
 		Find(&filmSequels)
 
@@ -41,10 +46,10 @@ func (s *filmSequelRepository) GetAll(ctx context.Context, filmId string) ([]mod
 	return filmSequels, nil
 }
 
-func (s *filmSequelRepository) Save(filmId int, sequelId int) error {
+func (s *filmSequelRepository) Save(filmID int, sequelID int) error {
 	var existingSequel model.FilmSequel
 
-	result := s.storage.DB().Where("film_id = ? AND sequel_id = ?", filmId, sequelId).First(&existingSequel)
+	result := s.storage.DB().Where("film_id = ? AND sequel_id = ?", filmID, sequelID).First(&existingSequel)
 
 	if result.Error == nil {
 		return nil
@@ -57,8 +62,8 @@ func (s *filmSequelRepository) Save(filmId int, sequelId int) error {
 	}
 
 	createdResult := s.storage.DB().Create(&model.FilmSequel{
-		FilmId:   filmId,
-		SequelId: sequelId,
+		FilmID:   filmID,
+		SequelID: sequelID,
 	})
 
 	if createdResult.Error != nil {

@@ -7,7 +7,7 @@ import (
 
 func MapModelUserToResponseDTO(user model.User) dto.MeResponseDTO {
 	return dto.MeResponseDTO{
-		Id:         user.Id,
+		Id:         user.ID,
 		Name:       user.Name,
 		NickName:   user.NickName,
 		Email:      user.Email,

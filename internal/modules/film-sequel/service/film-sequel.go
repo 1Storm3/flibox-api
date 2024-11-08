@@ -10,28 +10,33 @@ import (
 
 	"kbox-api/internal/config"
 	"kbox-api/internal/modules/film-sequel/dto"
+	"kbox-api/internal/modules/film-sequel/repository"
 	dtoFilm "kbox-api/internal/modules/film/dto"
-	"kbox-api/internal/modules/film/handler"
+	"kbox-api/internal/modules/film/service"
 	"kbox-api/shared/httperror"
 )
 
+type FilmSequelServiceInterface interface {
+	GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, error)
+}
+
 type FilmSequelService struct {
-	filmSequelRepo FilmSequelRepository
-	filmService    handler.FilmService
-	config         *config.Config
+	filmSequelRepo repository.FilmSequelRepositoryInterface
+	filmService    service.FilmServiceInterface
+	cfg            *config.Config
 }
 
 const baseUrlForAllSequels = "https://kinopoiskapiunofficial.tech/api/v2.1/films/%s/sequels_and_prequels"
 
 func NewFilmsSequelService(
-	filmSequelRepo FilmSequelRepository,
-	config *config.Config,
-	filmService handler.FilmService,
-) *FilmSequelService {
+	filmSequelRepo repository.FilmSequelRepositoryInterface,
+	cfg *config.Config,
+	filmService service.FilmServiceInterface,
+) FilmSequelServiceInterface {
 	return &FilmSequelService{
 		filmSequelRepo: filmSequelRepo,
 		filmService:    filmService,
-		config:         config,
+		cfg:            cfg,
 	}
 }
 
@@ -44,7 +49,7 @@ func (s *FilmSequelService) GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, er
 	if len(result) > 0 {
 		var sequels []dtoFilm.FilmResponseDTO
 		for _, sequel := range result {
-			res, err := s.filmService.GetOne(strconv.Itoa(sequel.SequelId))
+			res, err := s.filmService.GetOne(strconv.Itoa(sequel.SequelID))
 
 			if err != nil {
 				return []dtoFilm.FilmResponseDTO{}, err
@@ -64,7 +69,7 @@ func (s *FilmSequelService) GetAll(filmId string) ([]dtoFilm.FilmResponseDTO, er
 }
 
 func (s *FilmSequelService) FetchSequels(filmId string) ([]dtoFilm.FilmResponseDTO, error) {
-	apiKey := s.config.DB.ApiKey
+	apiKey := s.cfg.DB.ApiKey
 	baseUrlForAllSequels := fmt.Sprintf(baseUrlForAllSequels, filmId)
 	req, err := http.NewRequest("GET", baseUrlForAllSequels, nil)
 

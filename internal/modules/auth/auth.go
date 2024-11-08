@@ -7,21 +7,26 @@ import (
 	"kbox-api/internal/modules/user"
 )
 
-type Module struct {
-	config      *config.Config
-	authHandler *handler.AuthHandler
-	authService handler.AuthService
-	userModule  *user.Module
+type ModuleInterface interface {
+	AuthService() (service.AuthServiceInterface, error)
+	AuthHandler() (handler.AuthHandlerInterface, error)
 }
 
-func NewAuthModule(userModule *user.Module, config *config.Config) *Module {
+type Module struct {
+	config      *config.Config
+	authHandler handler.AuthHandlerInterface
+	authService service.AuthServiceInterface
+	userModule  user.ModuleInterface
+}
+
+func NewAuthModule(userModule user.ModuleInterface, config *config.Config) ModuleInterface {
 	return &Module{
 		config:     config,
 		userModule: userModule,
 	}
 }
 
-func (a *Module) AuthService() (handler.AuthService, error) {
+func (a *Module) AuthService() (service.AuthServiceInterface, error) {
 	if a.authService == nil {
 		userService, err := a.userModule.UserService()
 		if err != nil {
@@ -32,7 +37,7 @@ func (a *Module) AuthService() (handler.AuthService, error) {
 	return a.authService, nil
 }
 
-func (a *Module) AuthHandler() (*handler.AuthHandler, error) {
+func (a *Module) AuthHandler() (handler.AuthHandlerInterface, error) {
 	if a.authHandler == nil {
 		authService, err := a.AuthService()
 		if err != nil {

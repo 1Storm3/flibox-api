@@ -9,14 +9,20 @@ import (
 
 	"kbox-api/internal/modules/user/dto"
 	"kbox-api/internal/modules/user/mapper"
+	"kbox-api/internal/modules/user/service"
 	"kbox-api/shared/httperror"
 )
 
-type UserHandler struct {
-	userService UserService
+type UserHandlerInterface interface {
+	GetOneByNickName(c *fiber.Ctx) error
+	Update(c *fiber.Ctx) error
 }
 
-func NewUserHandler(userService UserService) *UserHandler {
+type UserHandler struct {
+	userService service.UserServiceInterface
+}
+
+func NewUserHandler(userService service.UserServiceInterface) UserHandlerInterface {
 	return &UserHandler{
 		userService: userService,
 	}
@@ -43,7 +49,7 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 		)
 	}
 
-	userUpdateRequest.Id = id
+	userUpdateRequest.ID = id
 
 	result, err := h.userService.Update(userUpdateRequest)
 

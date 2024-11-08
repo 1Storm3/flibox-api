@@ -2,10 +2,12 @@ package rest
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"kbox-api/internal/modules/comment/dto"
 
 	"kbox-api/internal/delivery/middleware"
 	dtoAuth "kbox-api/internal/modules/auth/dto"
 	authHandler "kbox-api/internal/modules/auth/handler"
+	commentHandler "kbox-api/internal/modules/comment/handler"
 	externalHandler "kbox-api/internal/modules/external/handler"
 	filmSequelHandler "kbox-api/internal/modules/film-sequel/handler"
 	filmSimilarHandler "kbox-api/internal/modules/film-similar/handler"
@@ -16,23 +18,25 @@ import (
 )
 
 type Router struct {
-	filmHandler        *filmHandler.FilmHandler
-	filmSequelHandler  *filmSequelHandler.FilmSequelHandler
-	filmSimilarHandler *filmSimilarHandler.FilmSimilarHandler
-	userHandler        *userHandler.UserHandler
-	userFilmHandler    *userFilmHandler.UserFilmHandler
-	authHandler        *authHandler.AuthHandler
-	externalHandler    *externalHandler.ExternalHandler
+	filmHandler        filmHandler.FilmHandlerInterface
+	filmSequelHandler  filmSequelHandler.FilmSequelHandlerInterface
+	filmSimilarHandler filmSimilarHandler.FilmSimilarHandlerInterface
+	userHandler        userHandler.UserHandlerInterface
+	userFilmHandler    userFilmHandler.UserFilmHandlerInterface
+	authHandler        authHandler.AuthHandlerInterface
+	externalHandler    externalHandler.ExternalHandlerInterface
+	commentHandler     commentHandler.CommentHandlerInterface
 }
 
 func NewRouter(
-	filmHandler *filmHandler.FilmHandler,
-	filmSequelHandler *filmSequelHandler.FilmSequelHandler,
-	userHandler *userHandler.UserHandler,
-	filmSimilarHandler *filmSimilarHandler.FilmSimilarHandler,
-	userFilmHandler *userFilmHandler.UserFilmHandler,
-	authHandler *authHandler.AuthHandler,
-	externalHandler *externalHandler.ExternalHandler,
+	filmHandler filmHandler.FilmHandlerInterface,
+	filmSequelHandler filmSequelHandler.FilmSequelHandlerInterface,
+	userHandler userHandler.UserHandlerInterface,
+	filmSimilarHandler filmSimilarHandler.FilmSimilarHandlerInterface,
+	userFilmHandler userFilmHandler.UserFilmHandlerInterface,
+	authHandler authHandler.AuthHandlerInterface,
+	externalHandler externalHandler.ExternalHandlerInterface,
+	commentHandler commentHandler.CommentHandlerInterface,
 ) *Router {
 	return &Router{
 		filmHandler:        filmHandler,
@@ -42,6 +46,7 @@ func NewRouter(
 		userFilmHandler:    userFilmHandler,
 		authHandler:        authHandler,
 		externalHandler:    externalHandler,
+		commentHandler:     commentHandler,
 	}
 }
 
@@ -53,8 +58,8 @@ func (r *Router) LoadRoutes(app fiber.Router) {
 
 	userFilmRoute := app.Group("api/user/favourites")
 	userFilmRoute.Get("", middleware.AuthMiddleware, r.userFilmHandler.GetAll)
-	userFilmRoute.Post(":film_id", middleware.AuthMiddleware, r.userFilmHandler.Add)
-	userFilmRoute.Delete(":film_id", middleware.AuthMiddleware, r.userFilmHandler.Delete)
+	userFilmRoute.Post(":filmId", middleware.AuthMiddleware, r.userFilmHandler.Add)
+	userFilmRoute.Delete(":filmId", middleware.AuthMiddleware, r.userFilmHandler.Delete)
 
 	userRoute := app.Group("api/user")
 	userRoute.Get(":nickName", middleware.AuthMiddleware, r.userHandler.GetOneByNickName)
@@ -72,4 +77,10 @@ func (r *Router) LoadRoutes(app fiber.Router) {
 
 	externalRoute := app.Group("api/upload")
 	externalRoute.Put("", middleware.AuthMiddleware, r.externalHandler.UploadFile)
+
+	commentRoute := app.Group("api/comment")
+	commentRoute.Get(":filmId", middleware.AuthMiddleware, r.commentHandler.GetAllByFilmID)
+	commentRoute.Post("", middleware.AuthMiddleware, middleware.ValidateMiddleware[dto.CreateCommentDTO](), r.commentHandler.Create)
+	commentRoute.Delete(":id", middleware.AuthMiddleware, r.commentHandler.Delete)
+	commentRoute.Patch(":id", middleware.AuthMiddleware, middleware.ValidateMiddleware[dto.UpdateCommentDTO](), r.commentHandler.Update)
 }

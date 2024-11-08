@@ -13,11 +13,19 @@ import (
 	"kbox-api/shared/httperror"
 )
 
+type UserRepositoryInterface interface {
+	GetOneById(ctx context.Context, id string) (model.User, error)
+	GetOneByEmail(ctx context.Context, email string) (model.User, error)
+	Create(ctx context.Context, user model.User) (model.User, error)
+	GetOneByNickName(ctx context.Context, nickName string) (model.User, error)
+	Update(ctx context.Context, userDTO dto.UpdateUserDTO) (model.User, error)
+}
+
 type userRepository struct {
 	storage *postgres.Storage
 }
 
-func NewUserRepository(storage *postgres.Storage) *userRepository {
+func NewUserRepository(storage *postgres.Storage) UserRepositoryInterface {
 	return &userRepository{
 		storage: storage,
 	}
@@ -121,7 +129,7 @@ func (u *userRepository) Update(ctx context.Context, userDTO dto.UpdateUserDTO) 
 	tx := u.storage.DB().WithContext(ctx).Begin()
 
 	var user model.User
-	if err := tx.Where("id = ?", userDTO.Id).First(&user).Error; err != nil {
+	if err := tx.Where("id = ?", userDTO.ID).First(&user).Error; err != nil {
 		tx.Rollback()
 		return model.User{}, httperror.New(http.StatusNotFound, "Пользователь не найден")
 	}

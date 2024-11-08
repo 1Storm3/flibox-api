@@ -6,30 +6,36 @@ import (
 	"kbox-api/internal/modules/external/service"
 )
 
-type Module struct {
-	config          *config.Config
-	externalService handler.ExternalService
-	s3Service       *service.S3Service
-	externalHandler *handler.ExternalHandler
+type ModuleInterface interface {
+	ExternalService() (service.ExternalServiceInterface, error)
+	S3Service() (service.S3ServiceInterface, error)
+	ExternalHandler() (handler.ExternalHandlerInterface, error)
 }
 
-func NewExternalModule(config *config.Config) *Module {
+type Module struct {
+	cfg             *config.Config
+	externalService service.ExternalServiceInterface
+	s3Service       service.S3ServiceInterface
+	externalHandler handler.ExternalHandlerInterface
+}
+
+func NewExternalModule(cfg *config.Config) ModuleInterface {
 	return &Module{
-		config: config,
+		cfg: cfg,
 	}
 }
 
-func (m *Module) ExternalService() (handler.ExternalService, error) {
+func (m *Module) ExternalService() (service.ExternalServiceInterface, error) {
 	if m.externalService == nil {
-		m.externalService = service.NewExternalService(m.config)
+		m.externalService = service.NewExternalService(m.cfg)
 	}
 	return m.externalService, nil
 }
 
-func (m *Module) S3Service() (*service.S3Service, error) {
+func (m *Module) S3Service() (service.S3ServiceInterface, error) {
 	if m.s3Service == nil {
 
-		s3Service, err := service.NewS3Service(m.config)
+		s3Service, err := service.NewS3Service(m.cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -38,8 +44,8 @@ func (m *Module) S3Service() (*service.S3Service, error) {
 	return m.s3Service, nil
 }
 
-func (m *Module) ExternalHandler() (*handler.ExternalHandler, error) {
-	if m.externalHandler == nil && m.s3Service == nil {
+func (m *Module) ExternalHandler() (handler.ExternalHandlerInterface, error) {
+	if m.externalHandler == nil {
 		externalService, err := m.ExternalService()
 		if err != nil {
 			return nil, err

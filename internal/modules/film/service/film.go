@@ -6,19 +6,25 @@ import (
 	"github.com/lib/pq"
 
 	"kbox-api/internal/model"
-	"kbox-api/internal/modules/external/handler"
+	"kbox-api/internal/modules/external/service"
 	"kbox-api/internal/modules/film/dto"
 	"kbox-api/internal/modules/film/mapper"
+	"kbox-api/internal/modules/film/repository"
 )
 
+type FilmServiceInterface interface {
+	GetOne(filmId string) (dto.FilmResponseDTO, error)
+	Search(match string, genres []string, page, pageSize int) ([]dto.FilmSearchResponseDTO, int64, error)
+}
+
 type FilmService struct {
-	filmRepo        FilmRepository
-	externalService handler.ExternalService
+	filmRepo        repository.FilmRepositoryInterface
+	externalService service.ExternalServiceInterface
 }
 
 func NewFilmService(
-	filmRepo FilmRepository,
-	externalService handler.ExternalService,
+	filmRepo repository.FilmRepositoryInterface,
+	externalService service.ExternalServiceInterface,
 ) *FilmService {
 	return &FilmService{
 		filmRepo:        filmRepo,

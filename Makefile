@@ -20,3 +20,6 @@ create-migration:
 
 swagger:
 	swag init -g cmd/kbox-api/main.go -o ./docs
+
+test:
+	go test -v ./...

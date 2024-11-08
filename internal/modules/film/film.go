@@ -8,25 +8,31 @@ import (
 	"kbox-api/internal/modules/film/service"
 )
 
+type ModuleInterface interface {
+	FilmService() (service.FilmServiceInterface, error)
+	FilmRepository() (repository.FilmRepositoryInterface, error)
+	FilmHandler() (handler.FilmHandlerInterface, error)
+}
+
 type Module struct {
 	storage        *postgres.Storage
-	filmService    handler.FilmService
-	filmRepository service.FilmRepository
-	externalModule *external.Module
-	filmHandler    *handler.FilmHandler
+	filmService    service.FilmServiceInterface
+	filmRepository repository.FilmRepositoryInterface
+	externalModule external.ModuleInterface
+	filmHandler    handler.FilmHandlerInterface
 }
 
 func NewFilmModule(
 	storage *postgres.Storage,
-	externalModule *external.Module,
-) *Module {
+	externalModule external.ModuleInterface,
+) ModuleInterface {
 	return &Module{
 		storage:        storage,
 		externalModule: externalModule,
 	}
 }
 
-func (f *Module) FilmService() (handler.FilmService, error) {
+func (f *Module) FilmService() (service.FilmServiceInterface, error) {
 	if f.filmService == nil {
 		repo, err := f.FilmRepository()
 
@@ -45,7 +51,7 @@ func (f *Module) FilmService() (handler.FilmService, error) {
 	return f.filmService, nil
 }
 
-func (f *Module) FilmRepository() (service.FilmRepository, error) {
+func (f *Module) FilmRepository() (repository.FilmRepositoryInterface, error) {
 	if f.filmRepository == nil {
 		f.filmRepository = repository.NewFilmRepository(f.storage)
 	}
@@ -53,7 +59,7 @@ func (f *Module) FilmRepository() (service.FilmRepository, error) {
 
 }
 
-func (f *Module) FilmHandler() (*handler.FilmHandler, error) {
+func (f *Module) FilmHandler() (handler.FilmHandlerInterface, error) {
 	if f.filmHandler == nil {
 		filmService, err := f.FilmService()
 		if err != nil {

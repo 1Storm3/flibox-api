@@ -1,4 +1,4 @@
-package user_film
+package userfilm
 
 import (
 	"kbox-api/database/postgres"
@@ -8,17 +8,25 @@ import (
 	"kbox-api/internal/modules/user-film/service"
 )
 
+var _ ModuleInterface = (*Module)(nil)
+
+type ModuleInterface interface {
+	UserFilmService() (service.UserFilmServiceInterface, error)
+	UserFilmRepository() (repository.UserFilmRepositoryInterface, error)
+	UserFilmHandler() (handler.UserFilmHandlerInterface, error)
+}
+
 type Module struct {
 	storage            *postgres.Storage
-	userFilmRepository service.UserFilmRepository
-	userFilmService    handler.UserFilmService
-	userFilmHandler    *handler.UserFilmHandler
-	filmModule         *film.Module
+	userFilmRepository repository.UserFilmRepositoryInterface
+	userFilmService    service.UserFilmServiceInterface
+	userFilmHandler    handler.UserFilmHandlerInterface
+	filmModule         film.ModuleInterface
 }
 
 func NewUserFilmModule(
 	storage *postgres.Storage,
-	filmModule *film.Module,
+	filmModule film.ModuleInterface,
 ) *Module {
 	return &Module{
 		storage:    storage,
@@ -26,7 +34,7 @@ func NewUserFilmModule(
 	}
 }
 
-func (u *Module) UserFilmService() (handler.UserFilmService, error) {
+func (u *Module) UserFilmService() (service.UserFilmServiceInterface, error) {
 	if u.userFilmService == nil {
 		repo, err := u.UserFilmRepository()
 		if err != nil {
@@ -37,14 +45,14 @@ func (u *Module) UserFilmService() (handler.UserFilmService, error) {
 	return u.userFilmService, nil
 }
 
-func (u *Module) UserFilmRepository() (service.UserFilmRepository, error) {
+func (u *Module) UserFilmRepository() (repository.UserFilmRepositoryInterface, error) {
 	if u.userFilmRepository == nil {
 		u.userFilmRepository = repository.NewUserFilmRepository(u.storage)
 	}
 	return u.userFilmRepository, nil
 }
 
-func (u *Module) UserFilmHandler() (*handler.UserFilmHandler, error) {
+func (u *Module) UserFilmHandler() (handler.UserFilmHandlerInterface, error) {
 	if u.userFilmHandler == nil {
 		userFilmService, err := u.UserFilmService()
 		if err != nil {
