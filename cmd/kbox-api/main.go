@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"kbox-api/internal/shared/logger"
 
 	"go.uber.org/zap"
 
 	_ "kbox-api/docs"
 	"kbox-api/internal/app"
-	"kbox-api/shared/logger"
 )
 
 // @title Swagger Kbox API

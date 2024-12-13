@@ -3,18 +3,17 @@ package app
 import (
 	"context"
 	"errors"
-	"log"
-	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/swaggo/fiber-swagger"
 
+	"kbox-api/internal/delivery/middleware"
 	"kbox-api/internal/delivery/rest"
 	"kbox-api/internal/metrics"
 	"kbox-api/internal/metrics/interceptor"
-	"kbox-api/shared/httperror"
-	"kbox-api/shared/logger"
+	"kbox-api/internal/shared/httperror"
+	"kbox-api/internal/shared/logger"
 )
 
 func (a *App) initModulesAndHandlers() error {
@@ -22,61 +21,55 @@ func (a *App) initModulesAndHandlers() error {
 	if err != nil {
 		return err
 	}
-	filmHandler, err := filmModule.FilmHandler()
+	filmHandler, err := filmModule.Handler()
 	if err != nil {
 		return err
 	}
-
 	filmSequelModule, err := a.diContainer.FilmSequelModule()
 	if err != nil {
 		return err
 	}
-	filmSequelHandler, err := filmSequelModule.FilmSequelHandler()
+	filmSequelHandler, err := filmSequelModule.Handler()
 	if err != nil {
 		return err
 	}
-
 	userModule, err := a.diContainer.UserModule()
 	if err != nil {
 		return err
 	}
-	userHandler, err := userModule.UserHandler()
+	userHandler, err := userModule.Handler()
 	if err != nil {
 		return err
 	}
-
 	userFilmModule, err := a.diContainer.UserFilmModule()
 	if err != nil {
 		return err
 	}
-	userFilmHandler, err := userFilmModule.UserFilmHandler()
+	userFilmHandler, err := userFilmModule.Handler()
 	if err != nil {
 		return err
 	}
-
 	filmSimilarModule, err := a.diContainer.FilmSimilarModule()
 	if err != nil {
 		return err
 	}
-	filmSimilarHandler, err := filmSimilarModule.FilmSimilarHandler()
+	filmSimilarHandler, err := filmSimilarModule.Handler()
 	if err != nil {
 		return err
 	}
-
 	authModule, err := a.diContainer.AuthModule()
 	if err != nil {
 		return err
 	}
-	authHandler, err := authModule.AuthHandler()
+	authHandler, err := authModule.Handler()
 	if err != nil {
 		return err
 	}
-
 	externalModule, err := a.diContainer.ExternalModule()
 	if err != nil {
 		return err
 	}
-	externalHandler, err := externalModule.ExternalHandler()
+	externalHandler, err := externalModule.Handler()
 	if err != nil {
 		return err
 	}
@@ -84,10 +77,42 @@ func (a *App) initModulesAndHandlers() error {
 	if err != nil {
 		return err
 	}
-	commentHandler, err := commentModule.CommentHandler()
+	commentHandler, err := commentModule.Handler()
 	if err != nil {
 		return err
 	}
+	collectionModule, err := a.diContainer.CollectionModule()
+	if err != nil {
+		return err
+	}
+	collectionHandler, err := collectionModule.Handler()
+	if err != nil {
+		return err
+	}
+	collectionFilmModule, err := a.diContainer.CollectionFilmModule()
+	if err != nil {
+		return err
+	}
+	collectionFilmHandler, err := collectionFilmModule.Handler()
+	if err != nil {
+		return err
+	}
+	historyFilmsModule, err := a.diContainer.HistoryFilmsModule()
+	if err != nil {
+		return err
+	}
+	historyFilmsHandler, err := historyFilmsModule.Handler()
+	if err != nil {
+		return err
+	}
+	userRepo, err := userModule.Repository()
+	if err != nil {
+		return err
+	}
+
+	config := a.diContainer.Config()
+
+	authMiddleware := middleware.AuthMiddleware(userRepo, config)
 
 	router := rest.NewRouter(
 		filmHandler,
@@ -98,8 +123,11 @@ func (a *App) initModulesAndHandlers() error {
 		authHandler,
 		externalHandler,
 		commentHandler,
+		collectionHandler,
+		collectionFilmHandler,
+		historyFilmsHandler,
 	)
-	router.LoadRoutes(a.httpServer)
+	router.LoadRoutes(a.httpServer, authMiddleware)
 
 	a.httpServer.Get("/swagger/*", fiberSwagger.WrapHandler)
 	a.httpServer.Use(interceptor.MetricsInterceptor())
@@ -147,18 +175,6 @@ func (a *App) customErrorHandler() fiber.ErrorHandler {
 			"message":    message,
 		})
 	}
-}
-
-func (a *App) initJWT() {
-	jwtKey := os.Getenv("JWT_SECRET_KEY")
-	if jwtKey == "" {
-		log.Fatal("JWT_SECRET_KEY не установлен в окружении")
-	}
-
-	a.httpServer.Use(func(c *fiber.Ctx) error {
-		c.Locals("jwtKey", jwtKey)
-		return c.Next()
-	})
 }
 
 func (a *App) initDIContainer(_ context.Context) error {

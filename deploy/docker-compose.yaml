@@ -10,9 +10,9 @@ services:
     networks:
       - monitoring_network
     depends_on:
-      - kinopoisk-api
+      - flibox-api
 
-  kinopoisk-api:
+  flibox-api:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
@@ -22,6 +22,8 @@ services:
       - monitoring_network
     env_file:
       - ../.env
+    container_name: flibox-api
 
 networks:
   monitoring_network:
+    external: true

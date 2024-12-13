@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"kbox-api/shared/closer"
+	"kbox-api/internal/shared/closer"
 )
 
 type App struct {
@@ -63,7 +63,6 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 
 	a.initFiberServer()
 	a.initCORS()
-	a.initJWT()
 
 	if err := a.initModulesAndHandlers(); err != nil {
 		return err

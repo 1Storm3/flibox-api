@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package recommendation;
+
+
+option go_package = "/gengrpc;gengrpc";
+
+service RecommendationUseCase {
+  rpc GetRecommendations (RecommendationRequest) returns (RecommendationResponse);
+}
+
+message RecommendationRequest {
+  repeated Film films = 1;
+}
+
+message RecommendationResponse {
+  repeated string films = 1;
+}
+
+message Film {
+  int32 id = 1;
+  string name_ru = 2;
+  string name_original = 3;
+  int32 year = 4;
+  string poster_url = 5;
+  double rating_kinopoisk = 6;
+  string description = 7;
+  string logo_url = 8;
+  string type = 9;
+  string cover_url = 10;
+  string trailer_url = 11;
+  repeated string genres = 12;
+}

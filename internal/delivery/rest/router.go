@@ -2,85 +2,154 @@ package rest
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"kbox-api/internal/modules/comment/dto"
 
 	"kbox-api/internal/delivery/middleware"
-	dtoAuth "kbox-api/internal/modules/auth/dto"
-	authHandler "kbox-api/internal/modules/auth/handler"
-	commentHandler "kbox-api/internal/modules/comment/handler"
-	externalHandler "kbox-api/internal/modules/external/handler"
-	filmSequelHandler "kbox-api/internal/modules/film-sequel/handler"
-	filmSimilarHandler "kbox-api/internal/modules/film-similar/handler"
-	filmHandler "kbox-api/internal/modules/film/handler"
-	userFilmHandler "kbox-api/internal/modules/user-film/handler"
-	dtoUser "kbox-api/internal/modules/user/dto"
-	userHandler "kbox-api/internal/modules/user/handler"
+	"kbox-api/internal/modules/auth"
+	"kbox-api/internal/modules/collection"
+	"kbox-api/internal/modules/collection-film"
+	"kbox-api/internal/modules/comment"
+	"kbox-api/internal/modules/external"
+	"kbox-api/internal/modules/film"
+	"kbox-api/internal/modules/film-sequel"
+	"kbox-api/internal/modules/film-similar"
+	"kbox-api/internal/modules/history-films"
+	"kbox-api/internal/modules/user"
+	"kbox-api/internal/modules/user-film"
+	"kbox-api/pkg/constant"
 )
 
 type Router struct {
-	filmHandler        filmHandler.FilmHandlerInterface
-	filmSequelHandler  filmSequelHandler.FilmSequelHandlerInterface
-	filmSimilarHandler filmSimilarHandler.FilmSimilarHandlerInterface
-	userHandler        userHandler.UserHandlerInterface
-	userFilmHandler    userFilmHandler.UserFilmHandlerInterface
-	authHandler        authHandler.AuthHandlerInterface
-	externalHandler    externalHandler.ExternalHandlerInterface
-	commentHandler     commentHandler.CommentHandlerInterface
+	filmHandler           film.HandlerInterface
+	filmSequelHandler     filmsequel.HandlerInterface
+	filmSimilarHandler    filmsimilar.HandlerInterface
+	userHandler           user.HandlerInterface
+	userFilmHandler       userfilm.HandlerInterface
+	authHandler           auth.HandlerInterface
+	externalHandler       external.HandlerInterface
+	commentHandler        comment.HandlerInterface
+	collectionHandler     collection.HandlerInterface
+	collectionFilmHandler collectionfilm.HandlerInterface
+	historyFilmsHandler   historyfilms.HandlerInterface
 }
 
 func NewRouter(
-	filmHandler filmHandler.FilmHandlerInterface,
-	filmSequelHandler filmSequelHandler.FilmSequelHandlerInterface,
-	userHandler userHandler.UserHandlerInterface,
-	filmSimilarHandler filmSimilarHandler.FilmSimilarHandlerInterface,
-	userFilmHandler userFilmHandler.UserFilmHandlerInterface,
-	authHandler authHandler.AuthHandlerInterface,
-	externalHandler externalHandler.ExternalHandlerInterface,
-	commentHandler commentHandler.CommentHandlerInterface,
+	filmHandler film.HandlerInterface,
+	filmSequelHandler filmsequel.HandlerInterface,
+	userHandler user.HandlerInterface,
+	filmSimilarHandler filmsimilar.HandlerInterface,
+	userFilmHandler userfilm.HandlerInterface,
+	authHandler auth.HandlerInterface,
+	externalHandler external.HandlerInterface,
+	commentHandler comment.HandlerInterface,
+	collectionHandler collection.HandlerInterface,
+	collectionFilmHandler collectionfilm.HandlerInterface,
+	historyFilmsHandler historyfilms.HandlerInterface,
 ) *Router {
 	return &Router{
-		filmHandler:        filmHandler,
-		filmSequelHandler:  filmSequelHandler,
-		userHandler:        userHandler,
-		filmSimilarHandler: filmSimilarHandler,
-		userFilmHandler:    userFilmHandler,
-		authHandler:        authHandler,
-		externalHandler:    externalHandler,
-		commentHandler:     commentHandler,
+		filmHandler:           filmHandler,
+		filmSequelHandler:     filmSequelHandler,
+		userHandler:           userHandler,
+		filmSimilarHandler:    filmSimilarHandler,
+		userFilmHandler:       userFilmHandler,
+		authHandler:           authHandler,
+		externalHandler:       externalHandler,
+		commentHandler:        commentHandler,
+		collectionHandler:     collectionHandler,
+		collectionFilmHandler: collectionFilmHandler,
+		historyFilmsHandler:   historyFilmsHandler,
 	}
 }
 
-func (r *Router) LoadRoutes(app fiber.Router) {
-	authRoute := app.Group("api/auth")
-	authRoute.Post("login", middleware.ValidateMiddleware[dtoAuth.LoginDTO](), r.authHandler.Login)
-	authRoute.Post("register", middleware.ValidateMiddleware[dtoUser.CreateUserDTO](), r.authHandler.Register)
-	authRoute.Put("me", middleware.AuthMiddleware, r.authHandler.Me)
+func (r *Router) LoadRoutes(app fiber.Router, authMiddleware fiber.Handler) {
+	apiRoute := app.Group("api")
 
-	userFilmRoute := app.Group("api/user/favourites")
-	userFilmRoute.Get("", middleware.AuthMiddleware, r.userFilmHandler.GetAll)
-	userFilmRoute.Post(":filmId", middleware.AuthMiddleware, r.userFilmHandler.Add)
-	userFilmRoute.Delete(":filmId", middleware.AuthMiddleware, r.userFilmHandler.Delete)
+	authRoute := apiRoute.Group("auth")
 
-	userRoute := app.Group("api/user")
-	userRoute.Get(":nickName", middleware.AuthMiddleware, r.userHandler.GetOneByNickName)
-	userRoute.Patch(":id", middleware.AuthMiddleware, r.userHandler.Update)
+	authRoute.Post("login",
+		middleware.ValidateMiddleware[auth.LoginDTO](),
+		r.authHandler.Login)
 
-	filmRoute := app.Group("api/film")
-	filmRoute.Get(":id", middleware.AuthMiddleware, r.filmHandler.GetOneByID)
-	filmRoute.Get("", middleware.AuthMiddleware, r.filmHandler.Search)
+	authRoute.Post("register",
+		middleware.ValidateMiddleware[user.CreateUserDTO](),
+		r.authHandler.Register)
 
-	sequelRoute := app.Group("api/sequel")
-	sequelRoute.Get(":id", middleware.AuthMiddleware, r.filmSequelHandler.GetAll)
+	authRoute.Put("me",
+		authMiddleware, r.authHandler.Me)
 
-	similarRoute := app.Group("api/similar")
-	similarRoute.Get(":id", middleware.AuthMiddleware, r.filmSimilarHandler.GetAll)
+	authRoute.Post("verify/:token",
+		r.authHandler.Verify)
 
-	externalRoute := app.Group("api/upload")
-	externalRoute.Put("", middleware.AuthMiddleware, r.externalHandler.UploadFile)
+	userFilmFavouriteRoute := apiRoute.Group("user/my",
+		authMiddleware,
+		middleware.RoleMiddleware(constant.Admin, constant.User),
+	)
+	userFilmFavouriteRoute.Get("/", r.userFilmHandler.GetAll)
+	userFilmFavouriteRoute.Post("/:filmId", r.userFilmHandler.Add)
+	userFilmFavouriteRoute.Delete("/:filmId", r.userFilmHandler.Delete)
 
-	commentRoute := app.Group("api/comment")
-	commentRoute.Get(":filmId", middleware.AuthMiddleware, r.commentHandler.GetAllByFilmID)
-	commentRoute.Post("", middleware.AuthMiddleware, middleware.ValidateMiddleware[dto.CreateCommentDTO](), r.commentHandler.Create)
-	commentRoute.Delete(":id", middleware.AuthMiddleware, r.commentHandler.Delete)
-	commentRoute.Patch(":id", middleware.AuthMiddleware, middleware.ValidateMiddleware[dto.UpdateCommentDTO](), r.commentHandler.Update)
+	userRoute := apiRoute.Group("user", authMiddleware)
+	userRoute.Get(":nickName", r.userHandler.GetOneByNickName)
+	userRoute.Patch(":id", r.userHandler.Update)
+
+	filmRoute := apiRoute.Group("film")
+	filmRoute.Get(":id", r.filmHandler.GetOneByID)
+	filmRoute.Get("", r.filmHandler.Search)
+
+	sequelRoute := apiRoute.Group("sequel")
+	sequelRoute.Get(":id", r.filmSequelHandler.GetAll)
+
+	similarRoute := apiRoute.Group("similar")
+	similarRoute.Get(":id", r.filmSimilarHandler.GetAll)
+
+	externalRoute := apiRoute.Group("upload", authMiddleware)
+	externalRoute.Put("", r.externalHandler.UploadFile)
+
+	commentRoute := apiRoute.Group("comment", authMiddleware)
+	commentRoute.Get("by/:filmId", r.commentHandler.GetAllByFilmID)
+
+	commentRoute.Post("",
+		middleware.ValidateMiddleware[comment.CreateCommentDTO](),
+		r.commentHandler.Create)
+
+	commentRoute.Delete(":id", r.commentHandler.Delete)
+
+	commentRoute.Patch(":id",
+		middleware.ValidateMiddleware[comment.UpdateCommentDTO](),
+		r.commentHandler.Update)
+
+	collectionRoute := apiRoute.Group("collection",
+		authMiddleware,
+		middleware.RoleMiddleware(constant.Admin, constant.User),
+	)
+	collectionRoute.Get("", r.collectionHandler.GetAll)
+	collectionRoute.Get("my", r.collectionHandler.GetAllMy)
+	collectionRoute.Get(":id", r.collectionHandler.GetOne)
+
+	collectionRoute.Post("",
+		middleware.ValidateMiddleware[collection.CreateCollectionDTO](),
+		r.collectionHandler.Create)
+
+	collectionRoute.Delete(":id", r.collectionHandler.Delete)
+
+	collectionRoute.Patch(":id",
+		middleware.ValidateMiddleware[collection.UpdateCollectionDTO](),
+		r.collectionHandler.Update)
+
+	collectionFilmRoute := apiRoute.Group("collection",
+		authMiddleware,
+		middleware.RoleMiddleware(constant.Admin, constant.User),
+	)
+
+	collectionFilmRoute.Post(":id/film",
+		middleware.ValidateMiddleware[collectionfilm.CreateCollectionFilmDTO](),
+		r.collectionFilmHandler.Add)
+
+	collectionRoute.Delete(":id/film",
+		middleware.ValidateMiddleware[collectionfilm.DeleteCollectionFilmDTO](),
+		r.collectionFilmHandler.Delete)
+
+	collectionRoute.Get(":id/films", r.collectionFilmHandler.GetFilmsByCollectionId)
+
+	historyFilmsRoute := apiRoute.Group("film/history", authMiddleware)
+	historyFilmsRoute.Post(":Id", r.historyFilmsHandler.Add)
 }
