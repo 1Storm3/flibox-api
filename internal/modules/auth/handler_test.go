@@ -10,11 +10,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/pkg/token"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/pkg/token"
 )
 
 var (

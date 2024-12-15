@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	appName   = "kinopoisk_api"
-	namespace = "kinopoisk_api__"
-	help      = "Total number of requests"
+	appName   = "kbox_api"
+	namespace = "kbox_api"
+	help      = "Отслеживание количества запросов"
 )
 
 type Metrics struct {

@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY .. .
 
-RUN go build -o main ./cmd/kbox-api/main.go
+RUN go build -o main ./cmd/flibox-api/main.go
 
 FROM alpine:latest
 

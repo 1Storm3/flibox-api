@@ -1,6 +1,6 @@
 package userfilm
 
-import "kbox-api/internal/model"
+import "github.com/1Storm3/flibox-api/internal/model"
 
 type GetUserFilmResponseDTO struct {
 	UserID string             `json:"userId"`

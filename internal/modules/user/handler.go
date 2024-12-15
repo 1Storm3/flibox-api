@@ -4,10 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-
-	"kbox-api/internal/shared/httperror"
 )
 
 var _ HandlerInterface = (*Handler)(nil)

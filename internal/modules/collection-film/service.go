@@ -3,7 +3,7 @@ package collectionfilm
 import (
 	"context"
 
-	"kbox-api/internal/modules/collection"
+	"github.com/1Storm3/flibox-api/internal/modules/collection"
 )
 
 type ServiceInterface interface {

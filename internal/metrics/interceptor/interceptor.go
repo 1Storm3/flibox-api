@@ -1,9 +1,8 @@
 package interceptor
 
 import (
+	"github.com/1Storm3/flibox-api/internal/metrics"
 	"github.com/gofiber/fiber/v2"
-
-	"kbox-api/internal/metrics"
 )
 
 func MetricsInterceptor() fiber.Handler {

@@ -1,9 +1,9 @@
 package collectionfilm
 
 import (
-	"kbox-api/internal/shared/httperror"
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"github.com/gofiber/fiber/v2"
 )
 

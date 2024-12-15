@@ -1,11 +1,10 @@
 package historyfilms
 
 import (
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation/adapter"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
+	"github.com/1Storm3/flibox-api/pkg/token"
 	"github.com/gofiber/fiber/v2"
-
-	"kbox-api/internal/modules/recommendation/adapter"
-	"kbox-api/internal/shared/logger"
-	"kbox-api/pkg/token"
 )
 
 type HandlerInterface interface {

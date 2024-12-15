@@ -2,14 +2,14 @@ package app
 
 import (
 	"context"
-	"log"
+	"github.com/1Storm3/flibox-api/internal/shared/closer"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
 	"net"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"kbox-api/internal/shared/closer"
+	"go.uber.org/zap"
 )
 
 type App struct {
@@ -58,7 +58,7 @@ func (a *App) initDeps(ctx context.Context) error {
 
 func (a *App) initHTTPServer(ctx context.Context) error {
 	if err := a.initMetrics(ctx); err != nil {
-		log.Fatalf("failed to initialize metrics: %v", err)
+		logger.Fatal("Ошибка при инициализации метрик: %v", zap.Error(err))
 	}
 
 	a.initFiberServer()
@@ -71,7 +71,7 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	go func() {
 		err := a.runPrometheus()
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal("Ошибка при запуске метрик", zap.Error(err))
 		}
 	}()
 
@@ -104,7 +104,7 @@ func (a *App) runPrometheus() error {
 		Addr:    "localhost:2020",
 		Handler: mux,
 	}
-	log.Printf("Starting prometheus server on %s", prometheusServer.Addr)
+	logger.Info("Сервер метрик запущен на", zap.String("Адрес", prometheusServer.Addr))
 
 	err := prometheusServer.ListenAndServe()
 	if err != nil {

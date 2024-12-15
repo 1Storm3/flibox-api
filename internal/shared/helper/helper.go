@@ -3,10 +3,12 @@ package helper
 import (
 	"bytes"
 	_ "embed"
-	"log"
 	"net/url"
 	"strings"
 	"text/template"
+
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
+	"go.uber.org/zap"
 )
 
 //go:embed template/email.html
@@ -24,7 +26,7 @@ func ExtractS3Key(photoURL string) (string, error) {
 func TakeHTMLTemplate(appUrl, verificationToken string) (string, error) {
 	tmpl, err := template.New("email").Parse(emailTemplate)
 	if err != nil {
-		log.Printf("Ошибка при создании шаблона: %v", err)
+		logger.Info("Ошибка при создании шаблона: %v", zap.Error(err))
 		return "", err
 	}
 
@@ -38,7 +40,7 @@ func TakeHTMLTemplate(appUrl, verificationToken string) (string, error) {
 
 	var emailBody bytes.Buffer
 	if err := tmpl.Execute(&emailBody, data); err != nil {
-		log.Printf("Ошибка при выполнении шаблона: %v", err)
+		logger.Info("Ошибка при выполнении шаблона: %v", zap.Error(err))
 		return "", err
 	}
 	return emailBody.String(), nil

@@ -1,8 +1,6 @@
 package film
 
-import (
-	"kbox-api/internal/model"
-)
+import "github.com/1Storm3/flibox-api/internal/model"
 
 func MapModelFilmToResponseSearchDTO(film model.Film) SearchResponseDTO {
 	return SearchResponseDTO{

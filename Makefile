@@ -10,10 +10,10 @@ proto:
 	       $(PROTO_DIR)/*.proto
 
 run-dev:
-	go run ./cmd/kbox-api/main.go -config .env
+	go run ./cmd/flibox-api/main.go -config .env
 
 build:
-	go build -o api ./cmd/kbox-api/main.go
+	go build -o api ./cmd/flibox-api/main.go
 
 clean:
 	rm -f api
@@ -30,7 +30,7 @@ create-migration:
 	goose -dir ./database/migrations create example_migration sql
 
 swagger:
-	swag init -g cmd/kbox-api/main.go -o ./docs
+	swag init -g cmd/flibox-api/main.go -o ./docs
 
 test:
 	go test -v ./...

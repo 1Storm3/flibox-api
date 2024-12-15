@@ -2,7 +2,8 @@ package comment
 
 import (
 	"context"
-	"kbox-api/internal/model"
+
+	"github.com/1Storm3/flibox-api/internal/model"
 )
 
 var _ ServiceInterface = (*Service)(nil)

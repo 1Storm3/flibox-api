@@ -3,7 +3,7 @@ package collection
 import (
 	"context"
 
-	"kbox-api/internal/model"
+	"github.com/1Storm3/flibox-api/internal/model"
 )
 
 type ServiceInterface interface {

@@ -1,13 +1,12 @@
 package comment
 
 import (
-	"kbox-api/internal/shared/httperror"
 	"net/http"
 	"strings"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/pkg/token"
 	"github.com/gofiber/fiber/v2"
-
-	"kbox-api/pkg/token"
 )
 
 var _ HandlerInterface = (*Handler)(nil)

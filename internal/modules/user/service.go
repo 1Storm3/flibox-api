@@ -2,15 +2,13 @@ package user
 
 import (
 	"context"
-
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/internal/model"
+	"github.com/1Storm3/flibox-api/internal/modules/external"
+	"github.com/1Storm3/flibox-api/internal/shared/helper"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"golang.org/x/crypto/bcrypt"
-
-	"kbox-api/internal/model"
-	"kbox-api/internal/modules/external"
-	"kbox-api/internal/shared/helper"
-	"kbox-api/internal/shared/httperror"
 )
 
 var _ ServiceInterface = (*Service)(nil)
@@ -18,7 +16,7 @@ var _ ServiceInterface = (*Service)(nil)
 type ServiceInterface interface {
 	GetOneByNickName(ctx context.Context, nickName string) (model.User, error)
 	GetOneByEmail(ctx context.Context, email string) (model.User, error)
-	CheckPassword(ctx context.Context, user model.User, password string) bool
+	CheckPassword(ctx context.Context, user *model.User, password string) bool
 	HashPassword(ctx context.Context, password string) (string, error)
 	Create(ctx context.Context, user model.User) (model.User, error)
 	GetOneById(ctx context.Context, id string) (model.User, error)
@@ -60,7 +58,7 @@ func (s *Service) GetOneByEmail(ctx context.Context, email string) (model.User, 
 	return s.repository.GetOneByEmail(ctx, email)
 }
 
-func (s *Service) CheckPassword(_ context.Context, user model.User, password string) bool {
+func (s *Service) CheckPassword(_ context.Context, user *model.User, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	return err == nil
 }

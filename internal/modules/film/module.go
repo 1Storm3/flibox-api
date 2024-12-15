@@ -1,8 +1,8 @@
 package film
 
 import (
-	"kbox-api/database/postgres"
-	"kbox-api/internal/modules/external"
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/modules/external"
 )
 
 type ModuleInterface interface {

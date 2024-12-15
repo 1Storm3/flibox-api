@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 
+	"github.com/1Storm3/flibox-api/internal/delivery/middleware"
+	"github.com/1Storm3/flibox-api/internal/delivery/rest"
+	"github.com/1Storm3/flibox-api/internal/metrics"
+	"github.com/1Storm3/flibox-api/internal/metrics/interceptor"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/swaggo/fiber-swagger"
-
-	"kbox-api/internal/delivery/middleware"
-	"kbox-api/internal/delivery/rest"
-	"kbox-api/internal/metrics"
-	"kbox-api/internal/metrics/interceptor"
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/internal/shared/logger"
 )
 
 func (a *App) initModulesAndHandlers() error {

@@ -1,8 +1,6 @@
 package auth
 
-import (
-	"kbox-api/internal/model"
-)
+import "github.com/1Storm3/flibox-api/internal/model"
 
 func MapModelUserToResponseDTO(user model.User) MeResponseDTO {
 	return MeResponseDTO{

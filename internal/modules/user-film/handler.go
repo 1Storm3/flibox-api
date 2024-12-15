@@ -5,14 +5,13 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/internal/model"
+	filmService "github.com/1Storm3/flibox-api/internal/modules/film"
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation/adapter"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
+	"github.com/1Storm3/flibox-api/pkg/token"
 	"github.com/gofiber/fiber/v2"
-
-	"kbox-api/internal/model"
-	filmService "kbox-api/internal/modules/film"
-	"kbox-api/internal/modules/recommendation/adapter"
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/internal/shared/logger"
-	"kbox-api/pkg/token"
 )
 
 var _ HandlerInterface = (*Handler)(nil)

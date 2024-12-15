@@ -3,10 +3,9 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/pkg/token"
 	"github.com/gofiber/fiber/v2"
-
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/pkg/token"
 )
 
 func RoleMiddleware(allowedRoles ...string) fiber.Handler {

@@ -1,8 +1,6 @@
 package user
 
-import (
-	"kbox-api/internal/model"
-)
+import "github.com/1Storm3/flibox-api/internal/model"
 
 func MapModelUserToResponseDTO(user model.User) ResponseDTO {
 	return ResponseDTO{

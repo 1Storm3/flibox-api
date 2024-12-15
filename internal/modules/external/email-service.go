@@ -1,9 +1,8 @@
 package external
 
 import (
+	"github.com/1Storm3/flibox-api/internal/config"
 	"gopkg.in/gomail.v2"
-
-	"kbox-api/internal/config"
 )
 
 type EmailServiceInterface interface {

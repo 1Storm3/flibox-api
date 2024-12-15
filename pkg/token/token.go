@@ -1,11 +1,11 @@
 package token
 
 import (
-	"kbox-api/internal/shared/httperror"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"github.com/golang-jwt/jwt"
 )
 

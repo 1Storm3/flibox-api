@@ -3,12 +3,11 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/modules/user"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/pkg/token"
 	"github.com/gofiber/fiber/v2"
-
-	"kbox-api/internal/config"
-	"kbox-api/internal/modules/user"
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/pkg/token"
 )
 
 func AuthMiddleware(userRepo user.RepositoryInterface, config *config.Config) fiber.Handler {

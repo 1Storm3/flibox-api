@@ -1,8 +1,6 @@
 package collection
 
-import (
-	"kbox-api/database/postgres"
-)
+import "github.com/1Storm3/flibox-api/database/postgres"
 
 type ModuleInterface interface {
 	Service() (ServiceInterface, error)

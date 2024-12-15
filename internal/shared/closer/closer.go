@@ -1,10 +1,12 @@
 package closer
 
 import (
-	"log"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
 	"os"
 	"os/signal"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 // создаем глобальный closer
@@ -93,7 +95,7 @@ func (c *Closer) CloseAll() {
 		// Читаем ошибки из канала и выводим их
 		for err := range errs {
 			if err != nil {
-				log.Printf("Error returned from closer: %v", err)
+				logger.Info("Ошибка при закрытии:", zap.Error(err))
 			}
 		}
 	})

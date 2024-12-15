@@ -1,23 +1,24 @@
 package app
 
 import (
-	"kbox-api/database/postgres"
-	"kbox-api/internal/config"
-	"kbox-api/internal/delivery/grpc"
-	"kbox-api/internal/modules/auth"
-	"kbox-api/internal/modules/collection"
-	"kbox-api/internal/modules/collection-film"
-	"kbox-api/internal/modules/comment"
-	"kbox-api/internal/modules/external"
-	"kbox-api/internal/modules/film"
-	"kbox-api/internal/modules/film-sequel"
-	"kbox-api/internal/modules/film-similar"
-	"kbox-api/internal/modules/history-films"
-	"kbox-api/internal/modules/recommendation"
-	"kbox-api/internal/modules/recommendation/adapter"
-	"kbox-api/internal/modules/user"
-	"kbox-api/internal/modules/user-film"
-	"kbox-api/internal/shared/logger"
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/delivery/grpc"
+	"github.com/1Storm3/flibox-api/internal/modules/auth"
+	"github.com/1Storm3/flibox-api/internal/modules/collection"
+	"github.com/1Storm3/flibox-api/internal/modules/collection-film"
+	"github.com/1Storm3/flibox-api/internal/modules/comment"
+	"github.com/1Storm3/flibox-api/internal/modules/external"
+	"github.com/1Storm3/flibox-api/internal/modules/film"
+	"github.com/1Storm3/flibox-api/internal/modules/film-sequel"
+	"github.com/1Storm3/flibox-api/internal/modules/film-similar"
+	"github.com/1Storm3/flibox-api/internal/modules/history-films"
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation"
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation/adapter"
+	"github.com/1Storm3/flibox-api/internal/modules/user"
+	"github.com/1Storm3/flibox-api/internal/modules/user-film"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
+	"go.uber.org/zap"
 )
 
 type diContainer struct {
@@ -228,7 +229,7 @@ func (d *diContainer) GrpcClient() (grpc.ClientConnInterface, error) {
 		var err error
 		d.grpcClient, err = grpc.NewClient(d.Config())
 		if err != nil {
-			logger.Info("Клиент gRPC не создан: " + err.Error())
+			logger.Info("Клиент gRPC не создан: ", zap.Error(err))
 		}
 	}
 	return d.grpcClient, nil

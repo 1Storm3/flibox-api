@@ -1,8 +1,6 @@
 package comment
 
-import (
-	"kbox-api/internal/model"
-)
+import "github.com/1Storm3/flibox-api/internal/model"
 
 func MapModelCommentToResponseDTO(comment model.Comment) ResponseDTO {
 	return ResponseDTO{

@@ -1,8 +1,6 @@
 package collectionfilm
 
-import (
-	"kbox-api/internal/modules/collection"
-)
+import "github.com/1Storm3/flibox-api/internal/modules/collection"
 
 type CreateCollectionFilmDTO struct {
 	FilmID int `json:"filmId" validate:"required"`

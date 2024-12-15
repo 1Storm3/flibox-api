@@ -2,13 +2,14 @@ package config
 
 import (
 	"flag"
-	"log"
 	"net"
 	"os"
 	"strconv"
 
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -70,11 +71,11 @@ func MustLoad() *Config {
 	}
 
 	if err != nil {
-		log.Printf("No loading .env file: %v", err)
+		logger.Info("Ошибка при загрузке конфигурации: %v", zap.Error(err))
 	}
 
 	if err := cleanenv.ReadEnv(&cfg); err != nil {
-		panic("config is empty: " + err.Error())
+		panic("Конфигурация некорректна:" + err.Error())
 	}
 
 	return &cfg
@@ -84,7 +85,7 @@ func MustLoad() *Config {
 func fetchConfigPath() string {
 	var res string
 
-	flag.StringVar(&res, "config", "", "path to config file")
+	flag.StringVar(&res, "config", "", "Путь к файлу конфигурации")
 	flag.Parse()
 
 	if res == "" {

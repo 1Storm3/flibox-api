@@ -1,11 +1,11 @@
 package recommendation
 
 import (
-	"kbox-api/internal/delivery/grpc"
-	"kbox-api/internal/modules/film"
-	historyfilms "kbox-api/internal/modules/history-films"
-	"kbox-api/internal/modules/recommendation/adapter"
-	userfilm "kbox-api/internal/modules/user-film"
+	"github.com/1Storm3/flibox-api/internal/delivery/grpc"
+	"github.com/1Storm3/flibox-api/internal/modules/film"
+	historyfilms "github.com/1Storm3/flibox-api/internal/modules/history-films"
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation/adapter"
+	userfilm "github.com/1Storm3/flibox-api/internal/modules/user-film"
 )
 
 type Module struct {

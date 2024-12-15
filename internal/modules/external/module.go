@@ -1,8 +1,6 @@
 package external
 
-import (
-	"kbox-api/internal/config"
-)
+import "github.com/1Storm3/flibox-api/internal/config"
 
 var _ ModuleInterface = (*Module)(nil)
 

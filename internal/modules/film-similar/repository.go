@@ -5,11 +5,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/model"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"gorm.io/gorm"
-
-	"kbox-api/database/postgres"
-	"kbox-api/internal/model"
-	"kbox-api/internal/shared/httperror"
 )
 
 var _ RepositoryInterface = (*Repository)(nil)

@@ -1,4 +1,4 @@
-module kbox-api
+module github.com/1Storm3/flibox-api
 
 go 1.23.0
 

@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/pkg/proto/gengrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"kbox-api/internal/config"
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/pkg/proto/gengrpc"
 )
 
 type ClientConnInterface interface {

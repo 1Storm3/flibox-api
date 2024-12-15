@@ -2,18 +2,18 @@ package auth
 
 import (
 	"context"
-	externalservice "kbox-api/internal/modules/external"
-	dtoUser "kbox-api/internal/modules/user"
-	"kbox-api/internal/shared/helper"
-	"kbox-api/internal/shared/httperror"
-	"kbox-api/internal/shared/logger"
 	"net/http"
 	"time"
 
-	"kbox-api/internal/config"
-	"kbox-api/internal/model"
-	"kbox-api/pkg/constant"
-	"kbox-api/pkg/token"
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/model"
+	externalservice "github.com/1Storm3/flibox-api/internal/modules/external"
+	dtoUser "github.com/1Storm3/flibox-api/internal/modules/user"
+	"github.com/1Storm3/flibox-api/internal/shared/helper"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
+	"github.com/1Storm3/flibox-api/pkg/token"
+	"go.uber.org/zap"
 )
 
 var _ ServiceInterface = (*Service)(nil)
@@ -22,7 +22,7 @@ type ServiceInterface interface {
 	Login(ctx context.Context, dto LoginDTO) (string, error)
 	Register(ctx context.Context, user RegisterDTO) (bool, error)
 	Me(ctx context.Context, userId string) (MeResponseDTO, error)
-	Verify(c context.Context, tokenDto string) error
+	Verify(ctx context.Context, tokenDto string) error
 }
 
 type Service struct {
@@ -44,7 +44,7 @@ func NewAuthService(userService dtoUser.ServiceInterface,
 
 func (s *Service) Login(ctx context.Context, req LoginDTO) (string, error) {
 	user, err := s.userService.GetOneByEmail(ctx, req.Email)
-	if err != nil || !s.userService.CheckPassword(ctx, user, req.Password) {
+	if err != nil || !s.userService.CheckPassword(ctx, &user, req.Password) {
 		return "", httperror.New(
 			http.StatusUnauthorized,
 			"Неверный логин или пароль",
@@ -106,7 +106,7 @@ func (s *Service) Register(ctx context.Context, req RegisterDTO) (bool, error) {
 		Email:         req.Email,
 		Password:      hashedPassword,
 		Photo:         req.Photo,
-		Role:          constant.User,
+		Role:          "user",
 		IsVerified:    false,
 		VerifiedToken: verificationToken,
 		LastActivity:  time.Now().UTC(),
@@ -132,7 +132,7 @@ func (s *Service) Register(ctx context.Context, req RegisterDTO) (bool, error) {
 			emailBody,
 			"Подтверждение регистрации",
 		); err != nil {
-			logger.Error(err.Error())
+			logger.Error("Ошибка при отправке email", zap.Error(err))
 		}
 	}()
 

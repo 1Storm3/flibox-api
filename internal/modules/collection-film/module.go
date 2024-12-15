@@ -1,8 +1,6 @@
 package collectionfilm
 
-import (
-	"kbox-api/database/postgres"
-)
+import "github.com/1Storm3/flibox-api/database/postgres"
 
 var _ ModuleInterface = (*Module)(nil)
 

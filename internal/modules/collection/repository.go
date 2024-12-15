@@ -3,13 +3,12 @@ package collection
 import (
 	"context"
 	"errors"
-	"kbox-api/internal/shared/httperror"
 	"net/http"
 
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/model"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"gorm.io/gorm"
-
-	"kbox-api/database/postgres"
-	"kbox-api/internal/model"
 )
 
 type RepositoryInterface interface {

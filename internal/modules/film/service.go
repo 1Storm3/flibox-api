@@ -3,10 +3,9 @@ package film
 import (
 	"context"
 
+	"github.com/1Storm3/flibox-api/internal/model"
+	"github.com/1Storm3/flibox-api/internal/modules/external"
 	"github.com/lib/pq"
-
-	"kbox-api/internal/model"
-	"kbox-api/internal/modules/external"
 )
 
 var _ ServiceInterface = (*Service)(nil)

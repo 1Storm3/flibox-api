@@ -1,8 +1,6 @@
 package collection
 
-import (
-	"kbox-api/internal/model"
-)
+import "github.com/1Storm3/flibox-api/internal/model"
 
 func MapModelCollectionToResponseDTO(collection model.Collection) ResponseDTO {
 	return ResponseDTO{

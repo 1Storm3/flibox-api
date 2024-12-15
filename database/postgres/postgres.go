@@ -19,19 +19,19 @@ func NewStorage(connectionString string) (*Storage, error) {
 
 	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open connection to database: %v", err)
+		return nil, fmt.Errorf("Ошибка при подключении к базе: %v", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("Ошибка при подключении к базе: %v", err)
 	}
 	err = sqlDB.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("failed to ping database: %v", err)
+		return nil, fmt.Errorf("Ошибка при подключении к базе: %v", err)
 	}
 
-	fmt.Println("Successfully connected to PostgreSQL database!")
+	fmt.Println("Успешное подключение к базе!")
 
 	return &Storage{db: db}, nil
 }

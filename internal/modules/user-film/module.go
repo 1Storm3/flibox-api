@@ -1,9 +1,9 @@
 package userfilm
 
 import (
-	"kbox-api/database/postgres"
-	"kbox-api/internal/modules/film"
-	"kbox-api/internal/modules/recommendation/adapter"
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/modules/film"
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation/adapter"
 )
 
 var _ ModuleInterface = (*Module)(nil)

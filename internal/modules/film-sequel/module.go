@@ -1,9 +1,9 @@
 package filmsequel
 
 import (
-	"kbox-api/database/postgres"
-	"kbox-api/internal/config"
-	"kbox-api/internal/modules/film"
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/modules/film"
 )
 
 var _ ModuleInterface = (*Module)(nil)

@@ -4,14 +4,14 @@ import (
 	"context"
 	"strconv"
 
-	"kbox-api/internal/delivery/grpc"
-	"kbox-api/internal/model"
-	filmService "kbox-api/internal/modules/film"
-	historyfilms "kbox-api/internal/modules/history-films"
-	"kbox-api/internal/modules/recommendation/adapter"
-	userfilm "kbox-api/internal/modules/user-film"
-	"kbox-api/internal/shared/logger"
-	"kbox-api/pkg/proto/gengrpc"
+	"github.com/1Storm3/flibox-api/internal/delivery/grpc"
+	"github.com/1Storm3/flibox-api/internal/model"
+	filmService "github.com/1Storm3/flibox-api/internal/modules/film"
+	historyfilms "github.com/1Storm3/flibox-api/internal/modules/history-films"
+	"github.com/1Storm3/flibox-api/internal/modules/recommendation/adapter"
+	userfilm "github.com/1Storm3/flibox-api/internal/modules/user-film"
+	"github.com/1Storm3/flibox-api/internal/shared/logger"
+	"github.com/1Storm3/flibox-api/pkg/proto/gengrpc"
 )
 
 type Service struct {
@@ -37,40 +37,9 @@ func NewRecommendationService(
 func (s *Service) CreateRecommendations(params adapter.RecommendationsParams) error {
 	ctx := context.Background()
 
-	var filmNames []*gengrpc.Film
-
-	favouriteFilms, err := s.userFilmService.GetAll(ctx, params.UserID, model.TypeUserFavourite, 5)
+	filmNames, err := s.GetFilmNamesForRecommendations(ctx, params.UserID)
 	if err != nil {
 		return err
-	}
-
-	historyFilms, err := s.historyFilmsService.GetAll(ctx, params.UserID)
-	if err != nil {
-		return err
-	}
-
-	for _, film := range historyFilms {
-		var filmName string
-		if film.Film.NameOriginal != nil {
-			filmName = *film.Film.NameOriginal
-		} else if film.Film.NameRU != nil {
-			filmName = *film.Film.NameRU
-		}
-		filmNames = append(filmNames, &gengrpc.Film{
-			NameOriginal: filmName,
-		})
-	}
-
-	for _, film := range favouriteFilms {
-		var filmName string
-		if film.Film.NameOriginal != nil {
-			filmName = *film.Film.NameOriginal
-		} else if film.Film.NameRU != nil {
-			filmName = *film.Film.NameRU
-		}
-		filmNames = append(filmNames, &gengrpc.Film{
-			NameOriginal: filmName,
-		})
 	}
 
 	if len(filmNames) == 0 {
@@ -82,17 +51,79 @@ func (s *Service) CreateRecommendations(params adapter.RecommendationsParams) er
 	if err != nil {
 		return err
 	}
+
 	recommendations, err := s.grpcClient.GetRecommendations(ctx, filmNames)
+	if err != nil {
+		return err
+	}
+
+	filmIds, err := s.GetUniqueFilmIDsForRecommendations(ctx, recommendations)
+	if err != nil {
+		return err
+	}
+
+	if len(filmIds) == 0 {
+		logger.Info("Нет рекомендаций")
+		return nil
+	}
+
+	err = s.AddFilmRecommendations(ctx, params.UserID, filmIds)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Рекомендации созданы")
+	return nil
+}
+
+func (s *Service) GetFilmNamesForRecommendations(ctx context.Context, userID string) ([]*gengrpc.Film, error) {
+	var filmNames []*gengrpc.Film
+
+	favouriteFilms, err := s.userFilmService.GetAll(ctx, userID, model.TypeUserFavourite, 5)
+	if err != nil {
+		return nil, err
+	}
+
+	historyFilms, err := s.historyFilmsService.GetAll(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, historyFilm := range historyFilms {
+		film := &historyFilm.Film
+		filmNames = append(filmNames, s.GetFilmName(film))
+	}
+
+	for _, favouriteFilm := range favouriteFilms {
+		film := &favouriteFilm.Film
+		filmNames = append(filmNames, s.GetFilmName(film))
+	}
+
+	return filmNames, nil
+}
+
+func (s *Service) GetFilmName(film *model.Film) *gengrpc.Film {
+	var filmName string
+	if film.NameOriginal != nil {
+		filmName = *film.NameOriginal
+	} else if film.NameRU != nil {
+		filmName = *film.NameRU
+	}
+	return &gengrpc.Film{NameOriginal: filmName}
+}
+
+func (s *Service) GetUniqueFilmIDsForRecommendations(ctx context.Context, recommendations []string) ([]*int, error) {
 	var filmIds []*int
 	seenFilmIDs := make(map[int]struct{})
 
 	for _, film := range recommendations {
 		filmExist, err := s.filmService.GetOneByNameRu(ctx, film)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
 		if filmExist.ID == nil {
-			// TODO: Интеграция с внешним API для добавления фильмов
+			// Запрос во внешний апи
 			continue
 		}
 
@@ -103,26 +134,18 @@ func (s *Service) CreateRecommendations(params adapter.RecommendationsParams) er
 		filmIds = append(filmIds, filmExist.ID)
 	}
 
+	return filmIds, nil
+}
+
+func (s *Service) AddFilmRecommendations(ctx context.Context, userID string, filmIds []*int) error {
 	var recommendFilms []userfilm.Params
 	for _, id := range filmIds {
 		recommendFilms = append(recommendFilms, userfilm.Params{
-			UserID: params.UserID,
+			UserID: userID,
 			FilmID: strconv.Itoa(*id),
 			Type:   model.TypeUserRecommend,
 		})
 	}
 
-	if len(recommendFilms) == 0 {
-		logger.Info("Нет рекомендаций")
-		return nil
-	}
-
-	err = s.userFilmService.AddMany(ctx, recommendFilms)
-	if err != nil {
-		return err
-	}
-
-	logger.Info("Рекомендации созданы")
-
-	return nil
+	return s.userFilmService.AddMany(ctx, recommendFilms)
 }

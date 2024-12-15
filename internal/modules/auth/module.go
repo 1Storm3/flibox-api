@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"kbox-api/internal/config"
-	"kbox-api/internal/modules/external"
-	"kbox-api/internal/modules/user"
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/modules/external"
+	"github.com/1Storm3/flibox-api/internal/modules/user"
 )
 
 var _ ModuleInterface = (*Module)(nil)

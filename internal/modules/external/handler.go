@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-
-	"kbox-api/internal/shared/httperror"
 )
 
 var _ HandlerInterface = (*Handler)(nil)

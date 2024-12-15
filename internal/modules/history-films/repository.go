@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"kbox-api/database/postgres"
-	"kbox-api/internal/model"
-	"kbox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/database/postgres"
+	"github.com/1Storm3/flibox-api/internal/model"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 )
 
 type RepositoryInterface interface {

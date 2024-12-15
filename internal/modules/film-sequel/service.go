@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"kbox-api/internal/config"
-	"kbox-api/internal/modules/film"
-	"kbox-api/internal/shared/httperror"
+	"github.com/1Storm3/flibox-api/internal/config"
+	"github.com/1Storm3/flibox-api/internal/modules/film"
+	"github.com/1Storm3/flibox-api/internal/shared/httperror"
 )
 
 var _ ServiceInterface = (*Service)(nil)
