@@ -42,8 +42,8 @@
 ### 1. Клонируйте репозиторий
 
 ```bash
-git clone https://github.com/1Storm3/filbox-api.git
-cd flibox-api
+git clone https://github.com/1Storm3/kinopoisk-api.git
+cd kinopoisk-api
 ```
 
 ### 2. Установите зависимости
